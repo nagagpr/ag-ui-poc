@@ -1,0 +1,54 @@
+Role: Lead AWS DevOps & Cloud Solutions Architect
+Project: Deploying containerized Next.js UI (`sage-ui`) and backend service (`sage-api`) from a monorepo structure to AWS via GitHub Actions.
+
+Context & Codebase Structure:
+- Repository root contains: `sage-ui/`, `sage-api/`, and `docker-compose.yml`.
+- `sage-ui/` is a Next.js (TypeScript) web app with a Dockerfile, package.json, and next.config.mjs.
+- `sage-api/` is the backend microservice with its own container build setup.
+
+Objective:
+Deliver a complete, production-ready CI/CD strategy and GitHub Actions pipeline to deploy both applications into AWS. 
+
+Please structure your response into the following 5 chronological sections:
+
+---
+
+### 1. Architectural Blueprint & Target Architecture
+- Evaluate the best AWS hosting targets for this monorepo (e.g., AWS App Runner vs. Amazon ECS Fargate behind an Application Load Balancer).
+- Detail how `sage-ui` will communicate with `sage-api` in production (networking, DNS, and environment variable routing).
+- Specify required AWS core resources: VPC, subnets, ECR repositories (`sage-ui`, `sage-api`), ALB/Target Groups, and Secrets Manager/Parameter Store.
+
+---
+
+### 2. AWS Security & OIDC Authentication Setup
+- Do NOT use long-lived IAM access keys. Provide the exact IAM OpenID Connect (OIDC) identity provider configuration for GitHub Actions (`token.actions.githubusercontent.com`).
+- Provide the JSON IAM Trust Policy scoped strictly to this repository (`repo:<owner>/<repo>:*`).
+- Provide the minimal IAM execution policy required for GitHub Actions runners to push to Amazon ECR and trigger deployments on ECS/App Runner.
+
+---
+
+### 3. Docker Optimization Check
+- Inspect and provide an optimized, multi-stage production `Dockerfile` for `sage-ui` leveraging Next.js standalone output mode (`output: "standalone"` in `next.config.mjs`).
+- Inspect and provide a hardened `Dockerfile` for `sage-api` adhering to non-root execution and minimal image footprint.
+- Ensure Docker layer caching is configured to speed up GitHub Actions runs.
+
+---
+
+### 4. GitHub Actions Workflows (Implementation)
+Provide two fully functional workflow YAML files placed in `.github/workflows/`:
+
+1. `.github/workflows/deploy-ui.yml`:
+   - Trigger: Push to `main` with path filters (`sage-ui/**`, `.github/workflows/deploy-ui.yml`).
+   - Permissions: `id-token: write`, `contents: read`.
+   - Steps: Checkout, authenticate to AWS via OIDC (`aws-actions/configure-aws-credentials`), log in to Amazon ECR (`aws-actions/amazon-ecr-login`), build/tag Docker image with Git SHA, push to ECR, and update the ECS task definition / deploy service.
+
+2. `.github/workflows/deploy-api.yml`:
+   - Trigger: Push to `main` with path filters (`sage-api/**`, `.github/workflows/deploy-api.yml`).
+   - Permissions & Steps: Independent build, test, container push to its own ECR repository, and deployment trigger for the API service.
+
+---
+
+### 5. Step-by-Step Execution Checklist
+- Provide a step-by-step checklist for what I need to run manually in the AWS Console / AWS CLI before running the pipelines for the first time.
+- List all GitHub Secrets and Variables required in GitHub Repository Settings.
+- Explain how rollbacks and deployment health checks are handled if a container fails to start.
