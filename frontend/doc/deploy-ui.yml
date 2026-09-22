@@ -1,0 +1,158 @@
+# sage-ui: GitHub -> Amazon ECR -> Amazon ECS Express Mode
+#
+#   push -> master     : build (Next.js, inside the Dockerfile), push to ECR, deploy to ECS Express Mode
+#   workflow_dispatch  : same as push (manual run from the Actions tab)
+#
+# Authentication uses GitHub OIDC -> IAM role sage-github-actions-deploy-role (shared with sage-api).
+# The job runs in the GitHub environment "production" because the IAM role's trust policy is
+# scoped to "...:environment:production" - do NOT remove the `environment:` line below.
+#
+# Deploy sage-api FIRST. Its workflow summary prints the API URL; put that URL in this repo's
+# SAGE_API_ORIGIN variable before running this workflow.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions -> Secrets):
+#   AWS_DEPLOY_ROLE_ARN          arn:aws:iam::107094296459:role/sage-github-actions-deploy-role
+#   ECS_EXECUTION_ROLE_ARN       arn:aws:iam::107094296459:role/sage-ecs-task-execution-role
+#   ECS_INFRASTRUCTURE_ROLE_ARN  arn:aws:iam::107094296459:role/sage-ecs-infrastructure-role
+# Repository variables (Variables tab):
+#   AWS_REGION            us-east-1
+#   ECS_CLUSTER           sage-prod
+#   SAGE_API_ORIGIN       https://<sage-api endpoint from its deploy summary>   (https, no trailing slash)
+#   UI_HEALTH_CHECK_PATH  (optional) defaults to /sage5 - must return HTTP 200, not a redirect
+#   ECS_SUBNETS           (optional) subnet-aaaa,subnet-bbbb - only if the account has no default VPC;
+#                         must be the SAME value as in sage-api so both services share one ALB
+#
+# Setup guide: SAGE_EXPRESS_MODE_DEPLOYMENT.md
+
+name: Deploy sage-ui
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  id-token: write # request the OIDC token for AWS
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+  ECR_REPOSITORY: sage-ui
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER || 'sage-prod' }}
+  ECS_SERVICE: sage-ui
+
+concurrency:
+  group: deploy-ui-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, push, and deploy UI
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # If your current deploy-ui.yml has lint/test steps (npm ci, npm test ...), keep them here,
+      # above "Check required repository secrets". The production build itself runs in the Dockerfile.
+
+      - name: Check required repository secrets and variables
+        env:
+          DEPLOY_ROLE: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          EXEC_ROLE: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+          INFRA_ROLE: ${{ secrets.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          API_ORIGIN: ${{ vars.SAGE_API_ORIGIN }}
+        run: |
+          missing=0
+          [ -z "$DEPLOY_ROLE" ] && { echo "::error::Repository secret AWS_DEPLOY_ROLE_ARN is not set"; missing=1; }
+          [ -z "$EXEC_ROLE" ]   && { echo "::error::Repository secret ECS_EXECUTION_ROLE_ARN is not set"; missing=1; }
+          [ -z "$INFRA_ROLE" ]  && { echo "::error::Repository secret ECS_INFRASTRUCTURE_ROLE_ARN is not set"; missing=1; }
+          case "$INFRA_ROLE" in
+            *sage-ecs-task-role|*sage-ecs-task-execution-role)
+              echo "::error::ECS_INFRASTRUCTURE_ROLE_ARN must be sage-ecs-infrastructure-role (trusts ecs.amazonaws.com), not a task role"
+              missing=1 ;;
+          esac
+          if [ -z "$API_ORIGIN" ]; then
+            echo "::error::Repository variable SAGE_API_ORIGIN is not set. Deploy sage-api first and copy the API URL from that run's summary."
+            missing=1
+          else
+            case "$API_ORIGIN" in
+              https://*) ;;
+              *) echo "::error::SAGE_API_ORIGIN must start with https:// (Express Mode endpoints are HTTPS-only)"; missing=1 ;;
+            esac
+            case "$API_ORIGIN" in
+              */) echo "::error::SAGE_API_ORIGIN must not end with a trailing slash"; missing=1 ;;
+            esac
+          fi
+          if [ "$missing" = 1 ]; then
+            echo "::error::Follow SAGE_EXPRESS_MODE_DEPLOYMENT.md Part B, then re-run this workflow."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: github-actions-sage-ui
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          provenance: false # plain image manifest; avoids untagged attestation artifacts in ECR
+          # SAGE_API_ORIGIN is passed at BUILD time too, in case next.config.mjs reads it at the
+          # top level (evaluated during `next build`). Harmless if only the runtime value is used.
+          build-args: |
+            SAGE_API_ORIGIN=${{ vars.SAGE_API_ORIGIN }}
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=gha,scope=sage-ui
+          cache-to: type=gha,mode=max,scope=sage-ui
+
+      # Express Mode creates/updates everything: task definition, service, ALB + HTTPS listener,
+      # target group, security groups, auto scaling, log group. No task-definition JSON needed.
+      - name: Deploy to Amazon ECS Express Mode
+        id: deploy
+        uses: aws-actions/amazon-ecs-deploy-express-service@v1
+        with:
+          cluster: ${{ env.ECS_CLUSTER }}
+          service-name: ${{ env.ECS_SERVICE }}
+          image: ${{ steps.ecr-login.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          execution-role-arn: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+          infrastructure-role-arn: ${{ secrets.ECS_INFRASTRUCTURE_ROLE_ARN }}
+          container-port: 3000
+          health-check-path: ${{ vars.UI_HEALTH_CHECK_PATH || '/sage5' }}
+          environment-variables: '[{"name":"NODE_ENV","value":"production"},{"name":"PORT","value":"3000"},{"name":"HOSTNAME","value":"0.0.0.0"},{"name":"SAGE_API_ORIGIN","value":"${{ vars.SAGE_API_ORIGIN }}"}]'
+          # Optional: comma-separated PUBLIC subnet IDs (>= 2 AZs, same VPC). Set repository
+          # variable ECS_SUBNETS only if the account has no default VPC; leave unset otherwise.
+          subnets: ${{ vars.ECS_SUBNETS }}
+          cpu: 512 # 0.5 vCPU
+          memory: 1024 # 1 GB
+          min-task-count: 1
+          max-task-count: 2
+
+      - name: Deployment summary
+        run: |
+          EP="${{ steps.deploy.outputs.endpoint }}"; EP="${EP#https://}"; EP="${EP#http://}"; EP="${EP%/}"
+          {
+            echo "### Deployed sage-ui to Amazon ECS Express Mode :rocket:"
+            echo ""
+            echo "- **Service ARN:** ${{ steps.deploy.outputs.service-arn }}"
+            echo "- **UI URL:** https://$EP/sage5"
+            echo "- **API origin used:** ${{ vars.SAGE_API_ORIGIN }}"
+            echo "- **Image tag:** ${{ github.sha }}"
+          } >> "$GITHUB_STEP_SUMMARY"
