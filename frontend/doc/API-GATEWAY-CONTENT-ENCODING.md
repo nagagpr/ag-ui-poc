@@ -1,6 +1,6 @@
-# CID 460 — Enable Content Encoding for REST API Gateway
+#  Enable Content Encoding for REST API Gateway
 
-Reference notes for remediating Qualys control **CID-460 (Medium)**: *Ensure content
+Reference notes for remediating Qualys control ** (Medium)**: *Ensure content
 encoding is enabled for REST API Gateway* — tracked in
 [RNTINFSRUM-12954](https://rntinscru.atlassian.net/browse/RNTINFSRUM-12954).
 
@@ -66,7 +66,7 @@ Don't use the public Invoke URL. Use one of these instead:
   `Accept-Encoding: gzip` from *inside* the VPC (EC2/Cloud9 in the VPC, or via
   VPN/Direct Connect) — not from a local browser, since the API is private.
 - **Authoritative confirmation**: the next Qualys rescan should show this resource ID
-  move from FAIL to PASS on control 460.
+  move from FAIL to PASS on control.
 
 ## Repeat per resource
 
