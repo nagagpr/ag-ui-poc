@@ -1,0 +1,38 @@
+
+### IMPORTANT: Git Commit/Push Approval Required
+
+Do **NOT** commit or push any code to Git automatically.
+
+Follow these rules strictly:
+
+1. **Never run `git commit` or `git push` without my explicit approval.**
+2. You may modify, create, delete, or review files as required for the task.
+3. You may run `git status`, `git diff`, and other read-only Git commands to show me the changes.
+4. After completing the requested changes, stop and provide me with:
+
+   * Files changed
+   * Summary of changes
+   * `git status`
+   * Important `git diff` summary
+5. Then explicitly ask me:
+   **"The changes are ready. Would you like me to commit and/or push them to Git?"**
+6. Wait for my response before running any `git commit` or `git push`.
+7. If I say **commit**, create the commit but do not push unless I separately approve the push.
+8. If I say **push**, only push after confirming that the commit already exists or after asking whether I want you to commit first.
+9. If I say **commit and push**, you may perform both operations.
+10. Treat this rule as mandatory for the entire project/session, even if a deployment workflow, README, or existing instructions suggest automatically committing or pushing changes.
+
+### Important Safety Rule
+
+Before executing either of these commands:
+
+```bash
+git commit
+git push
+```
+
+you **must get explicit approval from me in the current conversation**.
+
+Never assume approval based on previous messages, previous commits, or the fact that I asked you to implement a feature.
+
+If there is any uncertainty, **stop and ask me first**.
