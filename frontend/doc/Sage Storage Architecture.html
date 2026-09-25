@@ -1,0 +1,421 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Sage Storage Architecture</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --surface:#ffffff;
+    --surface-2:#eef0f4;
+    --border:#dde1e7;
+    --text:#161a20;
+    --text-muted:#5b6472;
+    --accent:#2f6fed;
+    --accent-ink:#ffffff;
+    --good:#0f8a5f;
+    --good-bg:#e6f6ef;
+    --good-border:#bfe6d4;
+    --warn:#b5650a;
+    --warn-bg:#fbeee0;
+    --warn-border:#f0d3ac;
+    --mono-bg:#12161d;
+    --mono-text:#dfe4ec;
+    --mono-border:#232a35;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#0f1216;
+      --surface:#171b21;
+      --surface-2:#1c2129;
+      --border:#2a313b;
+      --text:#e7eaee;
+      --text-muted:#9aa4b2;
+      --accent:#6f9bff;
+      --accent-ink:#0b1220;
+      --good:#3ddc97;
+      --good-bg:#122c22;
+      --good-border:#1f4a37;
+      --warn:#f0a94e;
+      --warn-bg:#33260f;
+      --warn-border:#54401a;
+      --mono-bg:#0a0d12;
+      --mono-text:#d7dee8;
+      --mono-border:#1c222b;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0f1216;
+    --surface:#171b21;
+    --surface-2:#1c2129;
+    --border:#2a313b;
+    --text:#e7eaee;
+    --text-muted:#9aa4b2;
+    --accent:#6f9bff;
+    --accent-ink:#0b1220;
+    --good:#3ddc97;
+    --good-bg:#122c22;
+    --good-border:#1f4a37;
+    --warn:#f0a94e;
+    --warn-bg:#33260f;
+    --warn-border:#54401a;
+    --mono-bg:#0a0d12;
+    --mono-text:#d7dee8;
+    --mono-border:#1c222b;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.55;
+  }
+
+  .page{
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 56px 20px 96px;
+  }
+
+  header.hero{
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+
+  .eyebrow{
+    display:inline-block;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  h1{
+    font-size: clamp(1.8rem, 4.4vw, 2.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+
+  .dek{
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    max-width: 62ch;
+    margin: 0 0 18px;
+  }
+
+  .meta{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .meta b{ color: var(--text); font-weight: 500; }
+
+  h2{
+    font-size: 1.3rem;
+    letter-spacing: -0.005em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+
+  h2 .tag{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 10px;
+    position: relative;
+    top: -2px;
+  }
+  .tag.good{ color: var(--good); background: var(--good-bg); border:1px solid var(--good-border); }
+  .tag.warn{ color: var(--warn); background: var(--warn-bg); border:1px solid var(--warn-border); }
+
+  section{ margin: 44px 0; }
+
+  p{ margin: 12px 0; max-width: 68ch; }
+
+  .lede{ color: var(--text-muted); margin-top: 0; }
+
+  /* At-a-glance cards */
+  .glance{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 28px 0 8px;
+  }
+  @media (max-width: 620px){ .glance{ grid-template-columns: 1fr; } }
+
+  .glance .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 16px 18px;
+  }
+  .glance .card .k{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .glance .card .v{ font-size: 1.02rem; font-weight: 600; margin-bottom: 6px; }
+  .glance .card .d{ font-size: 0.86rem; color: var(--text-muted); }
+  .glance .card.good{ border-color: var(--good-border); background: var(--good-bg); }
+  .glance .card.good .v{ color: var(--good); }
+  .glance .card.warn{ border-color: var(--warn-border); background: var(--warn-bg); }
+  .glance .card.warn .v{ color: var(--warn); }
+
+  /* Mapping table */
+  .tablewrap{ overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    font-size: 0.92rem;
+  }
+  th, td{
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  thead th{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--surface-2);
+  }
+  tbody tr:last-child td{ border-bottom: none; }
+  td.num, th.num{ text-align: right; font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code.path{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85em;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .why{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 16px 0;
+  }
+  .why .label{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+
+  .costmulti{
+    display:inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+  }
+  .costmulti .big{ font-size: 1.5rem; font-weight: 600; color: var(--warn); }
+
+  /* Path */
+  ol.path{
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    counter-reset: step;
+  }
+  ol.path li{
+    counter-increment: step;
+    position: relative;
+    padding: 4px 0 22px 44px;
+    border-left: 1px dashed var(--border);
+    margin-left: 15px;
+  }
+  ol.path li:last-child{ border-left-color: transparent; padding-bottom: 2px; }
+  ol.path li::before{
+    content: counter(step);
+    position: absolute;
+    left: -15px;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+  ol.path li.now::before{ color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+  ol.path li .step-label{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  ol.path li h3{ margin: 0 0 6px; font-size: 1.02rem; }
+  ol.path li p{ margin: 0; color: var(--text-muted); font-size: 0.94rem; }
+
+  footer{
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">Storage architecture · sage-node</div>
+    <h1>Where Sage's data should actually live</h1>
+    <p class="dek">Right now every write — results, recordings, reports, AI-driver artifacts — lands on the ECS task's local disk. When the task is replaced, it's gone. Here's the target architecture, split by data type, with the cost reasoning behind each choice.</p>
+    <div class="meta">
+      <span><b>Service</b> sage-node</span>
+      <span><b>Cluster</b> sage (ECS Express Mode)</span>
+      <span><b>Prepared</b> Sep 2026</span>
+    </div>
+  </header>
+
+  <div class="glance">
+    <div class="card good">
+      <div class="k">File &amp; binary artifacts</div>
+      <div class="v">Amazon S3</div>
+      <div class="d">Screenshots, videos, reports — write once, read later.</div>
+    </div>
+    <div class="card good">
+      <div class="k">Structured &amp; relational data</div>
+      <div class="v">RDS for PostgreSQL</div>
+      <div class="d">Audits, Quality Graph, reconciliation — needs real queries.</div>
+    </div>
+    <div class="card warn">
+      <div class="k">EFS</div>
+      <div class="v">Interim only</div>
+      <div class="d">Fastest unblock, not the cost-optimized end state.</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>What maps where</h2>
+    <p class="lede">The six local paths split cleanly into two shapes of data — files meant to be written once and fetched later, and records meant to be queried, joined, and audited.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Local path</th><th>Contains</th><th>Target</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="path">recorded-tests</code></td><td>Recorded tests and screenshots</td><td>S3</td></tr>
+          <tr><td><code class="path">test-reports</code></td><td>Execution reports</td><td>S3</td></tr>
+          <tr><td><code class="path">explorer-reports</code></td><td>Explorer crawl results</td><td>S3</td></tr>
+          <tr><td><code class="path">figma-reports</code></td><td>Figma analysis results</td><td>S3</td></tr>
+          <tr><td><code class="path">ai-driver-artifacts</code></td><td>AI Driver screenshots, videos, artifacts</td><td>S3</td></tr>
+          <tr><td><code class="path">results-store</code></td><td>Lifecycle, test repository, agentic missions, Ask SAGE sessions, audits, Quality Graph, reconciliation data</td><td>S3 for blobs · Postgres for the queryable records inside it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>File &amp; binary artifacts <span class="tag good">Amazon S3</span></h2>
+    <p>Recorded tests, execution reports, explorer and Figma results, AI-driver screenshots and videos — all of it is the same pattern: write a file, read it back later. That's exactly what S3 is built for, and it's roughly <strong>13× cheaper per GB</strong> than the alternative below for the identical workload.</p>
+
+    <div class="why">
+      <div class="label">Why S3, not a mounted filesystem</div>
+      <p style="margin:0">It decouples storage from the ECS task entirely — no volume-mount complexity, no risk of losing data when a task is replaced. It also supports presigned URLs, so the UI can fetch a screenshot or video directly instead of proxying it through the app, and it's a one-line addition to CloudFront if reports ever need to be served publicly.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Storage class</th><th>When it applies</th><th class="num">Cost / GB-month</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>S3 Standard</td><td>Active and recent artifacts</td><td class="num">$0.023</td></tr>
+          <tr><td>S3 Standard-IA</td><td>Auto-transition after ~30 days</td><td class="num">$0.0125</td></tr>
+          <tr><td>S3 Glacier Instant Retrieval</td><td>Auto-transition after ~90 days</td><td class="num">$0.004</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:10px; color:var(--text-muted); font-size:0.92rem;">Set these as S3 Lifecycle rules once, and old test runs and audit artifacts age themselves down in cost automatically — no app change required after the initial migration.</p>
+  </section>
+
+  <section>
+    <h2>Structured &amp; relational data <span class="tag good">RDS for PostgreSQL</span></h2>
+    <p>Audits, the Quality Graph, reconciliation data, lifecycle/test-repository metadata, and Ask SAGE sessions all imply relationships, joins, and a queryable audit trail. That calls for a relational engine, not raw files or a pure key-value store.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Option</th><th>Fits when</th><th class="num">Est. monthly</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>RDS Postgres · db.t4g.micro/small</strong> (recommended)</td><td>Steady, predictable load — this scale</td><td class="num">$12–25</td></tr>
+          <tr><td>Aurora Serverless v2</td><td>Genuinely spiky, unpredictable load only</td><td class="num">$43 floor</td></tr>
+          <tr><td>DynamoDB on-demand</td><td>Simple key-based lookups, no joins needed</td><td class="num">~$0 idle</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="why">
+      <div class="label">Why not Aurora Serverless by default</div>
+      <p style="margin:0">Aurora Serverless v2 scales up cleanly but has a real floor — about $43/month at its 0.5 ACU minimum, billed whether or not it's used. It no longer scales to near-zero the way Serverless v1 did. At this scale, a small single-AZ RDS instance is simply cheaper. Reach for Aurora Serverless v2 only if traffic is genuinely unpredictable and spiky.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why not EFS <span class="tag warn">Interim only</span></h2>
+    <p>EFS is the zero-code-change option: mount it, the app keeps writing to the same filesystem paths, done in an afternoon. That's the entire case for it — it is not the cost-optimized end state.</p>
+    <p><span class="costmulti"><span class="big">~13×</span> the per-GB cost of S3</span> for the identical read/write pattern, and none of S3's lifecycle-based cost controls for aging out old artifacts.</p>
+  </section>
+
+  <section>
+    <h2>Suggested path</h2>
+    <ol class="path">
+      <li class="now">
+        <div class="step-label">Now — unblock ECS</div>
+        <h3>Mount EFS as an interim fix</h3>
+        <p>If persistence needs to work immediately with no app rewrite, mount EFS into the ECS task so nothing is lost on task replacement while the target-state migration is planned.</p>
+      </li>
+      <li>
+        <div class="step-label">Next — target state</div>
+        <h3>Migrate to S3 + RDS Postgres</h3>
+        <p>Move file writes to the S3 SDK (<code class="path">@aws-sdk/client-s3</code> in Node) and move relational/audit data to RDS Postgres. This is the industry-standard end state, and meaningfully cheaper at any real volume.</p>
+      </li>
+    </ol>
+  </section>
+
+  <footer>
+    Sage storage architecture recommendation · S3 + RDS Postgres target state · EFS as interim step only
+  </footer>
+
+</div>
+
+</body></html>
