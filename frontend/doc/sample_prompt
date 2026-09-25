@@ -1,38 +1,122 @@
+I started recording and I believe screenshots/images are also being captured, but I cannot find the captured images in the expected S3 bucket.
 
-### IMPORTANT: Git Commit/Push Approval Required
+I have shared the application logs. Please investigate this issue end-to-end and do NOT make assumptions.
 
-Do **NOT** commit or push any code to Git automatically.
+### What I need you to investigate
 
-Follow these rules strictly:
+1. **Trace the image capture flow**
 
-1. **Never run `git commit` or `git push` without my explicit approval.**
-2. You may modify, create, delete, or review files as required for the task.
-3. You may run `git status`, `git diff`, and other read-only Git commands to show me the changes.
-4. After completing the requested changes, stop and provide me with:
+   * Identify exactly where screenshots/images are captured during recording.
+   * Identify the code/service responsible for saving or uploading these images.
+   * Confirm whether the image is first saved locally, stored temporarily, or directly uploaded to S3.
+   * Show the exact file/path/key being generated for each captured image.
 
-   * Files changed
-   * Summary of changes
-   * `git status`
-   * Important `git diff` summary
-5. Then explicitly ask me:
-   **"The changes are ready. Would you like me to commit and/or push them to Git?"**
-6. Wait for my response before running any `git commit` or `git push`.
-7. If I say **commit**, create the commit but do not push unless I separately approve the push.
-8. If I say **push**, only push after confirming that the commit already exists or after asking whether I want you to commit first.
-9. If I say **commit and push**, you may perform both operations.
-10. Treat this rule as mandatory for the entire project/session, even if a deployment workflow, README, or existing instructions suggest automatically committing or pushing changes.
+2. **Trace the S3 upload flow**
 
-### Important Safety Rule
+   * Identify the exact API/service/method that uploads the captured image to S3.
+   * Identify the S3 bucket, AWS region, and S3 key/prefix being used.
+   * Add detailed logging around the upload operation if logging is currently insufficient.
 
-Before executing either of these commands:
+3. **Investigate the HTTP 400 errors**
+   I noticed HTTP 400 responses in the logs.
 
-```bash
-git commit
-git push
-```
+   Please determine:
 
-you **must get explicit approval from me in the current conversation**.
+   * Which API is returning HTTP 400.
+   * The exact request URL/endpoint.
+   * HTTP method.
+   * Request payload/body.
+   * Relevant headers (do not log secrets/tokens).
+   * Response body/error message.
+   * Timestamp and correlation/request ID.
+   * Whether the 400 happens before S3 upload, during the upload process, or after the image has already been stored somewhere else.
 
-Never assume approval based on previous messages, previous commits, or the fact that I asked you to implement a feature.
+4. **Add temporary diagnostic logs**
+   Please add clear logs at every important step, for example:
 
-If there is any uncertainty, **stop and ask me first**.
+   CAPTURE_STARTED
+   CAPTURE_COMPLETED
+   IMAGE_CREATED
+   IMAGE_SIZE
+   IMAGE_LOCAL_PATH (if applicable)
+   UPLOAD_STARTED
+   S3_BUCKET
+   S3_REGION
+   S3_KEY
+   UPLOAD_REQUEST
+   UPLOAD_SUCCESS
+   UPLOAD_FAILED
+   HTTP_STATUS
+   ERROR_RESPONSE
+
+   Do NOT log AWS credentials, access keys, authorization tokens, cookies, or other secrets.
+
+5. **Verify whether the image actually exists**
+   For each captured image, establish this flow:
+
+   `Recording → Image Capture → Image File/Buffer → Upload API → S3`
+
+   Clearly identify the point where the flow fails.
+
+6. **Check S3 configuration**
+   Verify:
+
+   * Bucket name
+   * AWS region
+   * S3 prefix/key structure
+   * IAM permissions
+   * AWS credentials/role being used
+   * Whether the application is using the expected AWS account
+   * Whether the upload is going to a different bucket or prefix than expected
+   * Any bucket policy, CORS, encryption, or endpoint configuration that could cause the failure
+
+7. **Do not change the architecture yet**
+   First diagnose the existing implementation and identify the actual root cause.
+
+8. **Use the logs I provided**
+   Correlate the HTTP 400 entries with the recording/image-capture timestamps and determine exactly what operation was happening at that time.
+
+### Expected output
+
+Please provide:
+
+**A. Root cause**
+
+* Exact reason images are not appearing in S3.
+
+**B. Failure point**
+
+* The exact component/method/API where the failure occurs.
+
+**C. Evidence**
+
+* Relevant log entries and source-code locations that prove the failure.
+
+**D. Current image location**
+
+* If images are being successfully captured but not uploaded, tell me exactly where they are currently being stored.
+
+**E. S3 destination**
+
+* Expected bucket + prefix + generated S3 key.
+
+**F. HTTP 400 analysis**
+
+* Endpoint
+* Request
+* Response
+* Why it returns 400
+
+**G. Fix**
+
+* Make the smallest appropriate code/configuration change to fix the issue.
+
+**H. Verification**
+After the fix, provide exact steps to start a recording and verify:
+
+1. image is captured
+2. upload is triggered
+3. S3 upload succeeds
+4. exact S3 object/key can be found
+
+Please inspect the existing code and logs first. Do not rewrite unrelated code or change the architecture unless the investigation proves it is necessary.
