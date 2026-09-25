@@ -227,6 +227,16 @@
     color: var(--accent);
     margin-bottom: 6px;
   }
+  .why.alt{ border-left-color: var(--text-muted); }
+  .why ul{ margin: 8px 0 0; padding-left: 20px; }
+  .why ul li{ margin: 4px 0; }
+  .why .caveat{
+    margin: 12px 0 0;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+    color: var(--warn);
+    font-size: 0.92rem;
+  }
 
   .costmulti{
     display:inline-flex;
@@ -387,6 +397,17 @@
     <div class="why">
       <div class="label">Why not Aurora Serverless by default</div>
       <p style="margin:0">Aurora Serverless v2 scales up cleanly but has a real floor — about $43/month at its 0.5 ACU minimum, billed whether or not it's used. It no longer scales to near-zero the way Serverless v1 did. At this scale, a small single-AZ RDS instance is simply cheaper. Reach for Aurora Serverless v2 only if traffic is genuinely unpredictable and spiky.</p>
+    </div>
+
+    <div class="why alt">
+      <div class="label">Alternative: DynamoDB</div>
+      <p style="margin:0">Worth considering if the application's access patterns turn out to be primarily key-based lookups with limited relational querying:</p>
+      <ul>
+        <li>No traditional always-on database instance is required.</li>
+        <li>On-demand billing can be attractive for low or variable traffic.</li>
+        <li>It scales automatically with request volume.</li>
+      </ul>
+      <p class="caveat">Becomes less suitable if Quality Graph, reconciliation, or audit functionality needs complex joins and relational queries — which is the likely case here.</p>
     </div>
   </section>
 
