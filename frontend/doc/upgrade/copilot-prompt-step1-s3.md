@@ -41,8 +41,9 @@ Constraints:
 - Apply the Dockerfile and deploy-node.yml changes exactly as diffed in 1.S3_MIGRATION.md
   sections 5 and 6 — flag anything in those diffs that doesn't match what's actually in this
   repo's current Dockerfile/deploy-node.yml rather than silently reconciling it.
-- If sage-ecs-task-role already exists in this project's IAM setup (check deploy/ecs/README.md
-  or any existing IAM docs in this repo), tell me — don't assume it needs to be created fresh.
+- The IAM role for this is named sage-storage-task-role — NOT sage-ecs-task-role, which already
+  exists in this account but is provisioned for a different purpose (the Express Mode
+  infrastructure role). Don't confuse the two or suggest reusing sage-ecs-task-role.
 - Match this repo's existing code style, error handling patterns, and TypeScript conventions.
   Don't refactor anything outside what's needed for this upgrade.
 - List every file you plan to touch before editing, and wait for my go-ahead.
