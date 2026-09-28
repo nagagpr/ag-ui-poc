@@ -1,0 +1,55 @@
+
+You are a senior DevOps + test automation engineer. Analyze this repository (DMS Regression Testing suite) and produce a containerization and AWS deployment plan. Do NOT modify code yet — analysis and plan only.
+
+## Context
+- Repo contains:
+  - dms-regression-tool/dms_regression.py  — Python Tkinter GUI: copies PRD2 archive files, runs Playwright tests in parallel, streams logs, generates reports
+  - dms-regression-tool/allocation_report.py — parses allocation Excel files from a Windows mapped Z: drive
+  - dms-regression-tool/generate_results.py — HTML report generator (Chart.js)
+  - tests/*.spec.ts — 11 Playwright program tests + shared login.spec.ts, each up to 30 min
+  - playwright.config.ts (uses Google Chrome channel), package.json, tsconfig.json
+  - data/ (persistent state: tool_session.log, allocation_data.json, run_results.json), test-results/ (wiped each run)
+- Target env via TEST_ENV -> https://<env>.tbslink.net (uata, uatb, qata...)
+- Currently runs on Windows with `py` launcher, headed Chrome, Z: drive mapped to DMS file share.
+
+## Goal
+Run this suite in Docker, image stored in AWS ECR, executed as AWS ECS (Fargate preferred) tasks, triggered and deployed via GitHub Actions.
+
+## Step 1 — Inventory (be exhaustive, cite file + line)
+1. All Node and Python dependencies (package.json, imports in each .py file); list any missing requirements.txt entries.
+2. Every Windows-specific assumption: drive letters (Z:), backslash paths, `py` launcher, subprocess/taskkill/process-tree logic, Tkinter, os-specific calls.
+3. Every file system read/write: source paths on Z:, "Copy Files" source/destination and mechanism, data/ and test-results/ usage.
+4. All configuration and secrets: credentials in login.spec.ts or elsewhere, URLs, env vars, hardcoded values.
+5. How the GUI launches Playwright (command, parallelism, early-kill logic, log streaming) and how results flow into generate_results.py.
+6. Playwright config: browser channel, headed/headless, workers, timeouts, retries, reporters.
+
+## Step 2 — Feasibility & blockers
+For each item, classify as: works as-is / needs refactor / needs infrastructure decision. Specifically address:
+- Replacing the Tkinter GUI with a headless CLI entrypoint (e.g. `python -m dms_regression run --date YYYY-MM-DD --programs cetera,ubs --env uata`) while keeping the GUI usable locally.
+- Access to the Z: SMB share from a Linux container on Fargate (options: smbprotocol/smbclient in Python, S3 sync, FSx; required network connectivity to on-prem via VPN/Direct Connect).
+- Google Chrome channel on Linux amd64 in container; headless vs xvfb.
+- Where "Copy Files" to the target environment should run and with what permissions.
+- IP allow-listing for *.tbslink.net from AWS (NAT gateway static EIP).
+
+## Step 3 — Proposed design (produce concrete artifacts as drafts in the response)
+1. Dockerfile (base on mcr.microsoft.com/playwright matching the repo's @playwright/test version; install Python 3 + requirements; install Chrome; non-root user; single entrypoint).
+2. requirements.txt and .dockerignore.
+3. Refactor plan for dms_regression.py into core module + CLI + (optional) GUI wrapper; cross-platform paths via pathlib; POSIX process-group cleanup.
+4. Results persistence: upload test-results/, data/*.json, and final HTML report to S3 (s3://<bucket>/<env>/<date>/<run-id>/).
+5. Secrets via AWS Secrets Manager injected as ECS task env vars.
+6. ECS task definition (Fargate, CPU/memory sizing for Chrome — suggest 2 vCPU / 4–8 GB per program task, ephemeral storage, awslogs to CloudWatch). Recommend: one task per program vs. one task with Playwright workers — give pros/cons.
+7. GitHub Actions workflows:
+   a. build-push.yml — on push to main: build, tag with git SHA, push to ECR, using OIDC (aws-actions/configure-aws-credentials) — no static keys.
+   b. run-regression.yml — workflow_dispatch inputs (date, programs multi-select/comma list, env); runs `aws ecs run-task` per program, waits for completion, collects exit codes, posts S3 report link to job summary.
+8. IAM: GitHub OIDC role, ECS task execution role, task role (S3 write, Secrets read) — least privilege.
+9. Optional IaC skeleton (Terraform or CDK) for ECR repo, ECS cluster, task def, S3 bucket, log group, VPC/NAT.
+
+## Step 4 — Output format
+- Section A: Dependency & assumption inventory (table: item | file:line | issue | fix)
+- Section B: Blocker list with recommended decision and alternatives
+- Section C: Target architecture diagram (mermaid)
+- Section D: Draft files (Dockerfile, requirements.txt, .dockerignore, task-def JSON, both workflow YAMLs)
+- Section E: Phased migration plan (Phase 1: run locally in Docker headless; Phase 2: ECR + manual ECS run; Phase 3: GitHub Actions automation; Phase 4: reporting/notifications) with effort estimate per phase
+- Section F: Open questions I must answer (network, share access, credentials, whitelisting)
+
+Ask me before assuming anything about the Z: share, the file copy target, or credentials. Flag anything you cannot determine from the code.
