@@ -151,3 +151,9 @@ Whenever you propose code changes or modifications:
 1. Only show the modified files and code diffs in the chat.
 2. Clearly explain which files are being changed and why.
 3. Wait for my manual review and confirmation before applying or touching any git state.
+
+I’m logged in to the VS Code internal browser and have provided access to the project. Please scan and review the entire codebase for security vulnerabilities, code-quality issues, bugs, dependency risks, configuration issues, and potential performance problems.
+
+First, understand the complete project architecture, modules, dependencies, and application flow. Then identify all issues with file names, line numbers, severity, impact, and recommended fixes.
+
+Do not modify, commit, push, or create any files without my explicit approval. First provide the complete scan findings and proposed changes for my review. Wait for my approval before making any changes.
