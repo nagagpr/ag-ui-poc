@@ -132,3 +132,10 @@ mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-c
 start-maximized --user-data-dir=/tmp/playwright_chromiumdev_profile-77BuGB --remote-debugging-pipe --no-startup-window - <launched> pid=146 - [pid=146][err] [146:146:0928/071603.545723:ERROR:ui/ozone/platform/x11/ozone_platform_x11.cc(256)] Missing X server or $DISPLAY - [pid=146][err]
 [146:146:0928/071603.545785:ERROR:ui/aura/env.cc(246)] The platform failed to initialize. Exiting. - [pid=146][err] [146:160:0928/071603.546958:ERROR:dbus/bus.cc(400)] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory - [pid=146] <gracefully close sta
 pid=146] <kill> - [pid=146] <will force kill> - [pid=146] <process did exit: exitCode=1, signal=null> - [pid=146] starting temporary directories cleanup - [pid=146] finished temporary directories cleanup - [pid=146] <gracefully close end>
+
+
+First, thoroughly review and understand the complete codebase, project structure, architecture, dependencies, configuration, and existing functionality before making any changes.
+Verify that the current code is in a stable state and identify the files that should be included in the initial Git commit; do not modify unrelated code.
+Prepare the complete codebase for the **initial commit**, including all required source/configuration files and an appropriate `.gitignore`, while excluding secrets, credentials, build output, logs, and temporary files.
+Create the Git commit with the message: **`Initial commit - base project setup`**.
+**Do not push to the remote repository. Commit only after completing the review, and do not make any additional changes beyond what is required for the initial commit.**
