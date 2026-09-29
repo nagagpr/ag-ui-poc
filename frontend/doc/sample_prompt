@@ -144,3 +144,10 @@ Create the Git commit with the message: **`Initial commit - base project setup`*
 Review the complete codebase for security and code-quality issues before the initial commit. Check dependencies, hardcoded secrets/credentials, configuration files, insecure API usage, authentication/authorization, logging, input validation, and common vulnerabilities. Do not modify application functionality; only report issues that should be addressed before committing. After the review, provide a concise summary of findings and confirm whether the code is ready for the initial Git commit. Do not push anything to the remote repository.
 
 Before creating any Git commit, stop and show me the proposed changes and commit message. Do not commit or push anything without my explicit approval. Wait for my confirmation before performing the commit.
+
+Do not run any git commands, do not stage files (`git add`), and do not create commits (`git commit`). 
+
+Whenever you propose code changes or modifications:
+1. Only show the modified files and code diffs in the chat.
+2. Clearly explain which files are being changed and why.
+3. Wait for my manual review and confirmation before applying or touching any git state.
