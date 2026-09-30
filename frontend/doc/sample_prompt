@@ -212,3 +212,57 @@ standardHeaders true, legacyHeaders false, JSON 429 response
 { success:false, error:'Too many requests', traceId: req.traceId }.
 Do the same for other route files flagged by js/missing-rate-limiting, with stricter limits
 for execute/explorer/recorder/ai-driver/import/generate-spec routes. Update package-lock.json.
+---------------------------
+#codebase
+Goal: reduce the open CodeQL alerts by fixing ONLY safe, straightforward ones first. Skip anything
+risky and list it for me. SEC-2 (authentication/authorization) is out of scope — do not touch
+identity.middleware.ts, mutation-guard.middleware.ts or role logic.
+
+Wait for the current CodeQL scan on main to finish, then use the latest open alerts.
+
+A FIX IS "SAFE" ONLY IF ALL ARE TRUE
+- The change stays inside one function/file (or one small shared helper used by that file).
+- No new dependency (a package already in package.json is fine).
+- No change to API routes, request/response shape, UI, env vars, deploy config or data format.
+- Valid inputs behave exactly the same as before.
+- npm run build and npm test pass.
+If ANY is false or you are unsure -> SKIP it and add it to the "skipped" list with the reason.
+Never dismiss or suppress alerts; never add lgtm/codeql-ignore comments.
+
+ORDER (easiest first) — one commit per group
+1. Unpinned GitHub Actions (5): pin each `uses:` to the full commit SHA of the SAME version tag
+   currently used, with a comment, e.g. `actions/checkout@<sha> # v4.2.2`. No other workflow edits.
+2. Missing rate limiting (1): add a router-level limiter only if express-rate-limit (or the
+   existing custom limiter) is already available; keep limits generous (e.g. 100 req / 15 min),
+   JSON 429 in the existing error format. If a new dependency is needed -> skip.
+3. Remote property injection (1): use a Map, Object.create(null), or reject "__proto__",
+   "constructor", "prototype" keys. Behavior for normal keys unchanged.
+4. File-system race (2): replace exists-then-read/write (TOCTOU) with a direct operation inside
+   try/catch (handle ENOENT), or open with the right flags. Same result for normal cases.
+5. Polynomial ReDoS (19): fix only when you can either (a) add an input length cap before the
+   regex, or (b) rewrite to an equivalent linear regex AND add a unit test proving the same
+   matches for existing sample inputs. If equivalence is unclear -> skip.
+6. Path injection (24): fix only where the value is an id/file name from the request and the
+   base directory is clear: validate with a strict pattern (^[A-Za-z0-9._-]{1,128}$, no "..")
+   and check path.resolve(base, name) stays inside base. Use one small helper
+   (e.g. src/utils/safe-path.ts) if several files need it. Skip cases where the path comes from
+   config, other services, or where you are not sure what inputs are valid.
+
+DO NOT FIX NOW (report only, with your opinion: real issue or false positive, and suggested fix)
+- HTTP-to-file (7) and file-to-HTTP (4): these are usually intended upload/download or
+  Figma/Jira data flows; changing them can break features.
+- Anything touching auth, S3/PostgreSQL storage code, the test runner/execution, or
+  generate-spec, unless it is a one-line obviously safe change.
+
+FOR EACH GROUP
+1. Show me: alerts fixed (alert number + file:line), the diff summary, and alerts skipped + reason.
+2. Run npm run build and npm test; show results.
+3. Wait for my "approved" before committing/pushing that group.
+4. After approval: commit with message "fix(codeql): <group> — alerts #.., #.." and push to main.
+   (Pushing to main triggers deploy-node.yml; if the group only touches .github/workflows or
+   tests, say so.)
+
+FINAL REPORT
+| Group | Alerts fixed | Alerts skipped | Commit | Build/Test |
+Plus: the skipped list (alert # | file:line | reason | suggested fix | real or false positive),
+and the alert count before vs. after the next CodeQL run.
