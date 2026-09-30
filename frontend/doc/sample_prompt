@@ -204,3 +204,11 @@ WHEN COMPLETE, report:
 | Section | Branch | Status (done / partial / blocked) | Files changed | Tests added | Notes |
 Then list: new env vars I must set in GitHub/ECS, dependencies added/removed, `npm audit` result,
 manual test steps per section, and anything left open (including SEC-2 prerequisites you noticed).
+
+
+In src/routes/testcase-import.route.ts add express-rate-limit once at router level
+(router.use(importLimiter)) instead of per route: windowMs 15 min, limit 100 per user/IP,
+standardHeaders true, legacyHeaders false, JSON 429 response
+{ success:false, error:'Too many requests', traceId: req.traceId }.
+Do the same for other route files flagged by js/missing-rate-limiting, with stricter limits
+for execute/explorer/recorder/ai-driver/import/generate-spec routes. Update package-lock.json.
