@@ -157,3 +157,50 @@ I’m logged in to the VS Code internal browser and have provided access to the 
 First, understand the complete project architecture, modules, dependencies, and application flow. Then identify all issues with file names, line numbers, severity, impact, and recommended fixes.
 
 Do not modify, commit, push, or create any files without my explicit approval. First provide the complete scan findings and proposed changes for my review. Wait for my approval before making any changes.
+
+
+-------------------------------
+#codebase
+Read #file:docs/security/5.SECURITY_FIX_PROMPTS.md fully. It contains fix instructions for
+security/reliability issues found in an audit of this repo, split into sections SEC-1 … SEC-7.
+
+TASK
+Implement the fixes, one section at a time, in this order: SEC-1, SEC-3, SEC-4, SEC-5, SEC-6, SEC-7.
+SKIP SEC-2 (authentication/authorization) — it is waiting for a design decision. Do not change
+identity.middleware.ts or mutation-guard.middleware.ts.
+
+For each section:
+1. Re-locate the code by function name (line numbers in the file may be outdated).
+2. Follow that section's FIX steps and RULES, except: you do not need to wait for my OK between
+   sections — use the defaults below and continue.
+3. Create a separate branch per section (branch name is given in the section), commit there with a
+   clear message, and add/update the tests described in that section.
+4. Run `npm run build` and `npm test`. If a test fails, fix it before moving on. If you cannot
+   fix it, stop and tell me.
+
+DEFAULT DECISIONS (use these instead of asking)
+- SEC-1: generated test data goes into a sibling JSON file; new specs are "pending_review";
+  approval uses the existing role helper.
+- SEC-3: SAGE_ALLOWED_TARGET_HOSTS empty = allow any public host; private/metadata IPs always
+  blocked; SAGE_ALLOW_LOCAL_TARGETS only for non-production.
+- SEC-4 A: non-admin with mine=false -> 403.
+- SEC-4 B: replace xlsx with exceljs (+ csv-parse for CSV if no CSV parser exists); keep the
+  import output format identical.
+- SEC-5: keep existing response shapes (no 202/job API); concurrency default 3.
+- SEC-6: use Jest + ts-jest if that is what existing tests are written for.
+- SEC-7: fix real issues; do NOT suppress any alert — list false positives for me.
+
+STOP AND ASK ONLY IF
+- a change would alter a public API contract or the UI,
+- a new dependency other than the ones named above is needed,
+- a fix conflicts with another section or with existing behavior you cannot keep.
+
+GENERAL RULES
+- Match the existing code style and error handling. No unrelated refactoring.
+- Never hardcode secrets, hosts or keys. Don't run AWS commands.
+- Don't change S3/PostgreSQL storage code except where a section says so.
+
+WHEN COMPLETE, report:
+| Section | Branch | Status (done / partial / blocked) | Files changed | Tests added | Notes |
+Then list: new env vars I must set in GitHub/ECS, dependencies added/removed, `npm audit` result,
+manual test steps per section, and anything left open (including SEC-2 prerequisites you noticed).
