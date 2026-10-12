@@ -5,22 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quick Links API Flow</title>
 <style>
-:root{--bg:#f7f8fa;--card:#fff;--ink:#1d2330;--muted:#5b6475;--line:#dde1e8;--accent:#2f5bd3;--accent-soft:#e8eefc;--ok:#1f8a4c;--warn:#b26a00;--code:#f1f3f7;--codeink:#22283a}
-@media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1c2028;--ink:#e6e9ef;--muted:#9aa3b5;--line:#2c323d;--accent:#7f9dff;--accent-soft:#232c45;--ok:#4cc286;--warn:#e0a24a;--code:#11141a;--codeink:#d7dceb}}
+:root{--bg:#f7f8fa;--card:#fff;--ink:#1d2330;--muted:#5b6475;--line:#dde1e8;--accent:#2f5bd3;--accent-soft:#e8eefc;--ok:#1f8a4c;--warn:#b26a00;--bad:#c0392b;--code:#f1f3f7;--codeink:#22283a}
+@media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1c2028;--ink:#e6e9ef;--muted:#9aa3b5;--line:#2c323d;--accent:#7f9dff;--accent-soft:#232c45;--ok:#4cc286;--warn:#e0a24a;--bad:#ff7b6b;--code:#11141a;--codeink:#d7dceb}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 80px}
+.wrap{max-width:1060px;margin:0 auto;padding:24px 16px 80px}
 header h1{margin:0 0 4px;font-size:28px}
 header p{margin:0;color:var(--muted)}
 nav{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 0;margin:16px 0 8px;z-index:5;display:flex;gap:6px;flex-wrap:wrap}
 nav a{font-size:13px;color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:999px;background:var(--accent-soft)}
 h2{margin:40px 0 12px;font-size:22px;border-bottom:1px solid var(--line);padding-bottom:6px}
-h3{margin:28px 0 8px;font-size:17px}
+h3{margin:0 0 8px;font-size:17px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;vertical-align:middle;margin-left:6px}
 .seen{background:rgba(31,138,76,.14);color:var(--ok)}
 .verify{background:rgba(178,106,0,.15);color:var(--warn)}
+.m{display:inline-block;font:700 11px/1 Consolas,monospace;padding:4px 7px;border-radius:5px;color:#fff;margin-right:6px}
+.get{background:#1f8a4c}.post{background:#b26a00}.patch{background:#7a4cc2}
 pre{background:var(--code);color:var(--codeink);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font:13px/1.5 Consolas,"Cascadia Code",monospace;margin:10px 0}
 code{font-family:Consolas,"Cascadia Code",monospace;font-size:.92em;background:var(--code);padding:1px 5px;border-radius:4px}
 pre code{background:none;padding:0}
@@ -28,20 +30,22 @@ table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
 th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
 th{background:var(--accent-soft)}
 .tablewrap{overflow-x:auto}
-/* flow diagram */
-.flow{display:flex;flex-direction:column;align-items:stretch;gap:0;margin:14px 0}
+.flow{display:flex;flex-direction:column;margin:14px 0}
 .node{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:10px 14px}
 .node b{display:block}
 .node small{color:var(--muted)}
 .node.db{border-left-color:var(--ok)}
 .node.lib{border-left-color:var(--warn)}
-.arrow{text-align:center;color:var(--muted);font-size:18px;line-height:1.4}
+.node.dep{border-left-color:#7a4cc2}
+.arrow{text-align:center;color:var(--muted);font-size:16px;line-height:1.5}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media (max-width:640px){.split{grid-template-columns:1fr}}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:700px){.split,.three{grid-template-columns:1fr}}
 .step{display:flex;gap:12px;align-items:flex-start}
-.num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.num{flex:0 0 32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
 .step>div{flex:1;min-width:0}
 .tip{border-left:4px solid var(--warn);background:var(--card);padding:10px 14px;border-radius:6px;margin:10px 0}
+.note{border-left:4px solid var(--bad);background:var(--card);padding:10px 14px;border-radius:6px;margin:10px 0}
 ul.check{list-style:none;padding-left:0}
 ul.check li::before{content:"☐ ";color:var(--accent)}
 </style>
@@ -51,150 +55,204 @@ ul.check li::before{content:"☐ ";color:var(--accent)}
 
 <header>
   <h1>Quick Links API — End-to-End Flow</h1>
-  <p>Beginner guide: follow <code>GET /v1/quick-links</code> from Postman to the SQL query and back, then build your own API the same way.</p>
+  <p>Beginner guide: from the Postman click to the SQL query and back — then build your own API the same way.</p>
 </header>
 
 <nav>
-  <a href="#big">Big picture</a><a href="#folders">Folders</a><a href="#steps">Step by step</a>
-  <a href="#byid">GET by id</a><a href="#new">Build a new API</a><a href="#todo">Files to open</a><a href="#debug">Debug</a>
+  <a href="#big">Big picture</a><a href="#folders">Folders</a><a href="#get">GET flow</a>
+  <a href="#post">POST</a><a href="#patch">PATCH</a><a href="#models">Models</a>
+  <a href="#new">Build a new API</a><a href="#todo">To check</a><a href="#debug">Debug</a>
 </nav>
 
 <div class="legend">
-  <span><span class="tag seen">SEEN</span> seen in the code screenshots</span>
+  <span><span class="tag seen">CONFIRMED</span> from the real code</span>
   <span><span class="tag verify">VERIFY</span> not seen yet — open the file and confirm</span>
 </div>
 
-<!-- ========== BIG PICTURE ========== -->
-<h2 id="big">1. The big picture</h2>
+<!-- ===================== BIG PICTURE ===================== -->
+<h2 id="big">1. The big picture — <span class="m get">GET</span>/v1/quick-links</h2>
 <div class="flow">
-  <div class="node"><b>Postman / Frontend</b><small>GET {{baseUrl}}/v1/quick-links?limit=10&amp;offset=0 · Authorization: Bearer &lt;Okta token&gt;</small></div>
+  <div class="node"><b>Postman / Frontend</b><small>GET {{baseUrl}}/v1/quick-links?limit=10&amp;offset=0 · Authorization: Bearer &lt;Okta JWT&gt; · Accept: application/json</small></div>
   <div class="arrow">↓</div>
-  <div class="node"><b>FastAPI app (main.py) <span class="tag verify">VERIFY</span></b><small>registers the quick links router</small></div>
-  <div class="arrow">↓</div>
-  <div class="node"><b>quick_links_router.py <span class="tag verify">VERIFY</span></b><small>validates token → user_email, is_internal · builds PaginationRequest(limit, offset)</small></div>
-  <div class="arrow">↓</div>
-  <div class="node"><b>get_quick_links_service_singleton() <span class="tag seen">SEEN</span></b><small>reads DB name/user from settings · gets RDSProxyService connections · @lru_cache = created once</small></div>
-  <div class="arrow">↓</div>
-  <div class="node"><b>QuickLinksService (facade) <span class="tag seen">SEEN</span></b><small>search_quick_links() just delegates</small></div>
-  <div class="arrow">↓</div>
-  <div class="node"><b>QuickLinksGetService.search_quick_links() <span class="tag seen">SEEN</span></b><small>chooses VIEW or MANAGE</small></div>
-  <div class="arrow">↓</div>
-  <div class="split">
-    <div class="node"><b>VIEW → _execute_view_query()</b><small>SQL: GET_QUICK_LINKS_VIEW · 9 params</small></div>
-    <div class="node"><b>MANAGE → _execute_management_query()</b><small>SQL: GET_QUICK_LINKS_MANAGEMENT · 5 params</small></div>
+  <div class="node"><b>FastAPI app — main.py <span class="tag verify">VERIFY</span></b><small>include_router(..., prefix="/v1/quick-links")</small></div>
+  <div class="arrow">↓ FastAPI resolves dependencies before your code runs</div>
+  <div class="three">
+    <div class="node dep"><b>get_auth_service</b><small>validates JWT → 401</small></div>
+    <div class="node dep"><b>get_user_context</b><small>email, is_internal (Okta)</small></div>
+    <div class="node dep"><b>get_quick_links_service_singleton</b><small>cached service + DB connections</small></div>
   </div>
   <div class="arrow">↓</div>
-  <div class="node lib"><b>RDSProxyService.execute_query(sql, params)</b><small>shared library eas_api_common</small></div>
+  <div class="node"><b>get_quick_links() — quick_links_router.py <span class="tag seen">CONFIRMED</span></b><small>unknown params → 400 · Accept/media type check · MANAGE + external user → 403 · call service</small></div>
   <div class="arrow">↓</div>
-  <div class="node db"><b>PostgreSQL · portal_datastore (via AWS RDS Proxy)</b><small>quick links tables + FDW schema client_datastore</small></div>
+  <div class="node"><b>QuickLinksService (facade) <span class="tag seen">CONFIRMED</span></b><small>search_quick_links() delegates</small></div>
+  <div class="arrow">↓</div>
+  <div class="node"><b>QuickLinksGetService.search_quick_links() <span class="tag seen">CONFIRMED</span></b><small>chooses VIEW or MANAGE</small></div>
+  <div class="arrow">↓</div>
+  <div class="split">
+    <div class="node"><b>VIEW → _execute_view_query()</b><small>GET_QUICK_LINKS_VIEW · 9 params</small></div>
+    <div class="node"><b>MANAGE → _execute_management_query()</b><small>GET_QUICK_LINKS_MANAGEMENT · 5 params</small></div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="node lib"><b>RDSProxyService.execute_query(sql, params)</b><small>eas_api_common shared library</small></div>
+  <div class="arrow">↓</div>
+  <div class="node db"><b>PostgreSQL portal_datastore (AWS RDS Proxy)</b><small>quick links tables + FDW schema client_datastore</small></div>
   <div class="arrow">↓ rows (named tuples)</div>
-  <div class="node"><b>_row_to_quick_link(row) → QuickLink</b><small>maps columns, converts dates to UTC, sets is_editable</small></div>
+  <div class="node"><b>_row_to_quick_link() → QuickLink → QuickLinkListResponse</b><small>UTC dates · is_editable for MANAGE · pagination metadata</small></div>
   <div class="arrow">↓</div>
-  <div class="node"><b>QuickLinkListResponse(quick_links, pagination)</b><small>FastAPI turns it into JSON → Postman</small></div>
+  <div class="node"><b>convert_model_to_response(result, accept, "QuickLinkListResponse")</b><small>JSON 200 → Postman</small></div>
 </div>
 
-<!-- ========== FOLDERS ========== -->
-<h2 id="folders">2. Folder structure (one feature = one folder)</h2>
+<!-- ===================== FOLDERS ===================== -->
+<h2 id="folders">2. Folder structure</h2>
+<div class="split">
 <pre>quicklinks/
-├── model/   quick_link_models.py          # Pydantic models + FunctionScopeEnum
-├── router/  quick_links_router.py         # HTTP endpoints
+├── model/   quick_link_models.py
+├── router/  quick_links_router.py
 ├── service/
-│   ├── quick_links_service.py             # FACADE – single entry point
-│   ├── quick_links_base_service.py        # shared base (holds db_quicklinks)
-│   ├── quick_links_get_service.py         # READ
-│   ├── quick_links_create_service.py      # CREATE
-│   └── quick_links_update_service.py      # UPDATE + DELETE
+│   ├── quick_links_service.py        # FACADE
+│   ├── quick_links_base_service.py
+│   ├── quick_links_get_service.py    # READ
+│   ├── quick_links_create_service.py # CREATE
+│   └── quick_links_update_service.py # UPDATE+DELETE
 └── sql/
-    ├── get_quick_links_queries.py         # GET_QUICK_LINKS_VIEW / _MANAGEMENT / GET_QUICK_LINK_BY_ID
-    ├── create_quick_link_queries.py       # INSERT + CTE validations
-    ├── update_ / delete_ / validate_quick_link_queries.py
+    ├── get_quick_links_queries.py
+    ├── create_quick_link_queries.py
+    ├── update_/delete_/validate_..._queries.py
     └── quicklinks_constants.py</pre>
+<pre>common/                    # shared by all features
+├── models.py              # ActionEnum, StatusEnum, CategoryEnum…
+├── user_context.py        # UserContext, get_user_context
+├── content_negotiation.py # validate_accept_header,
+│                          # validate_content_type, validate_media_type
+└── validators.py          # validate_internal_access, URL/date checks
 
+eas_api_common / eas_utils # company libraries
+├── auth_service           # AuthService, get_auth_service
+├── rdsproxy_service       # RDSProxyService, get_manager
+├── error_response_util    # ErrorResponse, bad_request, not_found…
+├── pagination_util        # Pagination, PaginationRequest
+├── content_type_util      # MediaType, convert_model_to_response
+├── config                 # settings.get_property(...)
+└── logging_util           # LoggingUtil.get_logger</pre>
+</div>
 <div class="tablewrap"><table>
 <tr><th>Layer</th><th>Job</th><th>Should NOT do</th></tr>
-<tr><td><b>router</b></td><td>HTTP: read URL, query, body, token; return status code</td><td>business logic, SQL</td></tr>
-<tr><td><b>service</b></td><td>business logic, call DB, map rows → models</td><td>know about HTTP</td></tr>
-<tr><td><b>sql</b></td><td>plain SQL strings with <code>%s</code> placeholders</td><td>Python logic</td></tr>
-<tr><td><b>model</b></td><td>request/response shapes with validation</td><td>DB calls</td></tr>
+<tr><td><b>router</b></td><td>headers, query params, body, auth, status codes</td><td>business logic, SQL</td></tr>
+<tr><td><b>service</b></td><td>business logic, DB calls, rows → models, return <code>ErrorResponse</code></td><td>HTTP details</td></tr>
+<tr><td><b>sql</b></td><td>SQL strings with <code>%s</code> placeholders</td><td>Python logic</td></tr>
+<tr><td><b>model</b></td><td>request/response shapes + validation (Pydantic)</td><td>DB calls</td></tr>
 </table></div>
 
-<!-- ========== STEPS ========== -->
-<h2 id="steps">3. Step by step</h2>
+<!-- ===================== GET FLOW ===================== -->
+<h2 id="get">3. <span class="m get">GET</span>/v1/quick-links — step by step</h2>
 
 <div class="card step"><div class="num">0</div><div>
-<h3 style="margin-top:0">The request (Postman)</h3>
+<h3>The request</h3>
 <pre>GET {{baseUrl}}/v1/quick-links?limit=10&amp;offset=0
-Authorization: Bearer &lt;token from "POST Okta Token"&gt;</pre>
-<p><code>limit</code> = rows per page, <code>offset</code> = rows to skip. The token comes from the <b>Okta Token</b> request in the same collection.</p>
+Authorization: Bearer &lt;token from "POST Okta Token"&gt;
+Accept: application/json</pre>
+<div class="tablewrap"><table>
+<tr><th>Query param</th><th>Default</th><th>Rule</th><th>Example</th></tr>
+<tr><td><code>function_scope</code></td><td><code>ViewQuickLinks</code></td><td><code>ViewQuickLinks</code> | <code>QuickLinksManagement</code></td><td><code>?function_scope=QuickLinksManagement</code></td></tr>
+<tr><td><code>limit</code></td><td>100</td><td>1 … MAX_PAGE_LIMIT (100)</td><td><code>?limit=10</code></td></tr>
+<tr><td><code>offset</code></td><td>0</td><td>≥ 0</td><td><code>?offset=20</code></td></tr>
+<tr><td><code>quick_link_id</code></td><td>none</td><td>list — repeat the param</td><td><code>?quick_link_id=1&amp;quick_link_id=5</code></td></tr>
+</table></div>
+<p>Any other parameter → <b>400 "Invalid request format"</b>.</p>
 </div></div>
 
 <div class="card step"><div class="num">1</div><div>
-<h3 style="margin-top:0">App registers the router <span class="tag verify">VERIFY</span></h3>
-<pre>from quicklinks.router.quick_links_router import router as quick_links_router
-app.include_router(quick_links_router, prefix="/v1")</pre>
-<p>Search the repo for <code>quick_links_router</code> to find the real line.</p>
+<h3>Router registration <span class="tag verify">VERIFY</span></h3>
+<pre>router = APIRouter(tags=["Quick Links"])   # router file, line 48
+@router.get("")                            # path "" → prefix comes from main.py</pre>
+<p>So <code>main.py</code> should contain <code>app.include_router(quick_links_router.router, prefix="/v1/quick-links")</code> — search for <code>quick_links_router</code>.</p>
 </div></div>
 
 <div class="card step"><div class="num">2</div><div>
-<h3 style="margin-top:0">Router endpoint <span class="tag verify">VERIFY</span></h3>
-<p>Typical shape — confirm in <code>quicklinks/router/quick_links_router.py</code>:</p>
-<pre>@router.get("/quick-links")
-def search_quick_links(limit: int = 10, offset: int = 0,
-                       function_scope: FunctionScopeEnum = FunctionScopeEnum.VIEW,
-                       user = Depends(&lt;auth dependency&gt;)):        # validates Okta token
-    pagination = PaginationRequest(limit=limit, offset=offset)
-    result = get_quick_links_service_singleton().search_quick_links(
-        user_email=user.email, is_internal=user.is_internal,
-        function_scope=function_scope, quick_link_ids=None, pagination=pagination)
-    if isinstance(result, ErrorResponse):
-        return JSONResponse(status_code=result.status_code, content=...)
-    return result</pre>
-<p>Look for: which dependency validates the token, how <code>user_email</code>/<code>is_internal</code> are read, and who may use MANAGE scope.</p>
+<h3>Module setup (runs once at import) <span class="tag seen">CONFIRMED</span></h3>
+<pre>DEFAULT_PAGE_LIMIT = settings.get_property("quicklinks", "default_page_limit", default=100)
+MAX_PAGE_LIMIT     = settings.get_property("quicklinks", "max_page_limit",     default=100)
+router = APIRouter(tags=["Quick Links"])
+VALID_MEDIA_TYPES = [MediaType.APPLICATION_JSON.value]</pre>
+<div class="note"><code>get_optional_auth_service()</code> skips JWT checks when <code>environment</code> is local/dev/development — but the three endpoints use <code>Depends(get_auth_service)</code>, not this one, so it isn't used by them.</div>
 </div></div>
 
 <div class="card step"><div class="num">3</div><div>
-<h3 style="margin-top:0">Build service + DB connections <span class="tag seen">SEEN</span></h3>
-<pre>@lru_cache()                                    # created ONCE, reused for every request
+<h3>Dependencies — FastAPI fills these in <span class="tag seen">CONFIRMED</span></h3>
+<pre>async def get_quick_links(
+    request: Request,
+    auth: Annotated[AuthService, Depends(get_auth_service)],            # JWT check → 401
+    user_context: Annotated[UserContext, Depends(get_user_context)],    # email, is_internal
+    accept: Annotated[Optional[str], Header(alias="Accept")] = MediaType.APPLICATION_JSON,
+    function_scope: Annotated[FunctionScopeEnum, Query()] = FunctionScopeEnum.VIEW,
+    page_limit:  Annotated[int, Query(ge=1, le=MAX_PAGE_LIMIT, alias="limit")] = DEFAULT_PAGE_LIMIT,
+    page_offset: Annotated[int, Query(ge=0, alias="offset")] = 0,
+    quick_link_id: Annotated[Optional[List[int]], Query()] = None,
+    quick_links_service: Annotated[QuickLinksService, Depends(get_quick_links_service_singleton)] = None,
+) -&gt; QuickLinkListResponse | JSONResponse:</pre>
+<div class="tip"><b>Depends(x)</b> = FastAPI calls <code>x()</code> for you and passes the result. In tests you can swap it with <code>app.dependency_overrides</code>. <b>Query(ge=1, le=…)</b> = automatic number validation.</div>
+</div></div>
+
+<div class="card step"><div class="num">4</div><div>
+<h3>Validations in the endpoint <span class="tag seen">CONFIRMED</span></h3>
+<pre># 1. reject unknown query params
+error = _validate_query_parameters(request)
+if error: return convert_model_to_response(error, accept, "ErrorResponse", error.status)
+
+# 2. pagination object
+pagination = PaginationRequest(limit=page_limit, offset=page_offset, result_set_id=None)
+
+# 3. Accept header must be application/json
+accept = validate_accept_header(accept)
+error = validate_media_type(accept)
+if error: return convert_model_to_response(error, accept, "ErrorResponse", error.status)
+
+# 4. who is calling
+user_email = user_context.email
+
+# 5. only INTERNAL users may use MANAGE scope
+if function_scope == FunctionScopeEnum.MANAGE:
+    access_error = validate_internal_access(user_context.is_internal)
+    if access_error: return convert_model_to_response(access_error, accept, "ErrorResponse", access_error.status)</pre>
+</div></div>
+
+<div class="card step"><div class="num">5</div><div>
+<h3>Call the service <span class="tag seen">CONFIRMED</span></h3>
+<pre>try:
+    result = quick_links_service.search_quick_links(
+        user_email=user_email, is_internal=user_context.is_internal,
+        function_scope=function_scope, quick_link_ids=quick_link_id, pagination=pagination)
+    if isinstance(result, ErrorResponse):
+        return convert_model_to_response(result, accept, "ErrorResponse", result.status)
+    return convert_model_to_response(result, accept, "QuickLinkListResponse")      # 200
+except Exception:
+    logger.exception("Unhandled exception in get_quick_links")
+    error_model = internal_server_error(ERROR_CODE_RETRIEVING_DATA, ERROR_MSG_RETRIEVING_DATA)
+    return convert_model_to_response(error_model, accept, "ErrorResponse", error_model.status)</pre>
+<p class="note">Helpers <code>QuickLinkQueryParams</code>, <code>_create_pagination_request</code> and <code>_perform_search</code> exist in the router but the GET endpoint does the same work inline.</p>
+</div></div>
+
+<div class="card step"><div class="num">6</div><div>
+<h3>Service singleton + DB connection <span class="tag seen">CONFIRMED</span></h3>
+<pre>@lru_cache()                                   # created ONCE
 def get_quick_links_service_singleton() -&gt; "QuickLinksService":
-    # Both services connect to portal_datastore (where FDWs and quicklinks tables exist)
     db_name = settings.get_property("database", "portal_db_name")
     db_user = settings.get_property("database", "portal_db_user")
     db_entitlements = get_manager().get_service(db_name=db_name, db_user=db_user)
     db_quicklinks   = get_manager().get_service(db_name=db_name, db_user=db_user)
     return QuickLinksService(db_entitlements, db_quicklinks)</pre>
-<ul>
-<li><code>settings.get_property</code> → config (<code>eas_utils.config</code>), section <code>[database]</code>.</li>
-<li><code>get_manager().get_service</code> → <b>RDSProxyService</b> = DB connection through AWS RDS Proxy.</li>
-</ul>
-</div></div>
-
-<div class="card step"><div class="num">4</div><div>
-<h3 style="margin-top:0">Facade delegates <span class="tag seen">SEEN</span></h3>
-<pre>def __init__(self, db_entitlements, db_quicklinks):
-    self.get_service    = get_quick_links_get_service_singleton(db_entitlements, db_quicklinks)
-    self.create_service = get_quick_links_create_service_singleton(db_quicklinks, db_entitlements)
-    self.update_service = get_quick_links_update_service_singleton(db_quicklinks, db_entitlements)</pre>
 <div class="tablewrap"><table>
-<tr><th>Facade method</th><th>Goes to</th><th>HTTP</th></tr>
-<tr><td>search_quick_links</td><td>QuickLinksGetService.search_quick_links</td><td>GET list</td></tr>
-<tr><td>get_quick_link_by_id</td><td>QuickLinksGetService.get_quick_link_by_id</td><td>GET by id</td></tr>
-<tr><td>create_quick_link</td><td>QuickLinksCreateService.create_quick_link</td><td>POST</td></tr>
-<tr><td>update_quick_link</td><td>QuickLinksUpdateService.update_quick_link</td><td>PATCH</td></tr>
-<tr><td>delete_quick_link</td><td>QuickLinksUpdateService.delete_quick_link</td><td>DELETE (soft delete)</td></tr>
+<tr><th>Facade method</th><th>Delegates to</th><th>Endpoint</th></tr>
+<tr><td>search_quick_links</td><td>QuickLinksGetService</td><td>GET</td></tr>
+<tr><td>get_quick_link_by_id</td><td>QuickLinksGetService</td><td>internal use</td></tr>
+<tr><td>create_quick_link</td><td>QuickLinksCreateService</td><td>POST</td></tr>
+<tr><td>update_quick_link</td><td>QuickLinksUpdateService</td><td>PATCH action=UPDATE</td></tr>
+<tr><td>delete_quick_link</td><td>QuickLinksUpdateService</td><td>PATCH action=DELETE (soft)</td></tr>
 </table></div>
 </div></div>
 
-<div class="card step"><div class="num">5</div><div>
-<h3 style="margin-top:0">Choose VIEW or MANAGE <span class="tag seen">SEEN</span></h3>
-<pre>if function_scope == FunctionScopeEnum.VIEW:
-    rows = self._execute_view_query(self.db_quicklinks, user_email, is_internal, quick_link_ids, pagination)
-else:
-    rows = self._execute_management_query(self.db_quicklinks, user_email, quick_link_ids, pagination)</pre>
-<p><b>VIEW</b> = end user sees links they are allowed to see. <b>MANAGE</b> = admin screen, also returns <code>is_editable</code>.</p>
-</div></div>
-
-<div class="card step"><div class="num">6</div><div>
-<h3 style="margin-top:0">Parameters sent to the DB <span class="tag seen">SEEN</span></h3>
+<div class="card step"><div class="num">7</div><div>
+<h3>VIEW or MANAGE → parameters to DB <span class="tag seen">CONFIRMED</span></h3>
 <div class="split">
 <div><b>VIEW — 9 params</b>
 <pre>params_tuple = (
@@ -218,103 +276,122 @@ else:
 )</pre></div>
 </div>
 <pre>rows = db.execute_query(GET_QUICK_LINKS_VIEW, params_tuple, fetch_one=False, use_named_tuples=True)</pre>
-<div class="tip"><b>Why <code>%s</code> + tuple?</b> Parameterized query — the driver inserts values safely (no SQL injection). <b>Why repeated values?</b> <code>%s</code> is positional; every place the SQL uses a value needs its own entry, in the same order.</div>
+<div class="tip"><b>%s + tuple</b> = parameterized query → no SQL injection. Values repeat because <code>%s</code> is positional.</div>
 </div></div>
 
-<div class="card step"><div class="num">7</div><div>
-<h3 style="margin-top:0">The SQL that runs <span class="tag verify">VERIFY</span></h3>
-<p>Real text is in <code>quicklinks/sql/get_quick_links_queries.py</code>. Expected <b>shape</b> (illustrative):</p>
+<div class="card step"><div class="num">8</div><div>
+<h3>The SQL <span class="tag verify">VERIFY</span></h3>
+<p>Real text: <code>quicklinks/sql/get_quick_links_queries.py</code>. Expected shape:</p>
 <pre>WITH caller AS ( SELECT ... WHERE email = %s ), ...
 SELECT ql.id, ql.url_label, ql.category, ql.url, ql.open_in_new_tab, ql.display_order,
        ql.quicklink_display_start_date, ql.quicklink_display_end_date,
        ql.program, ql.program_instance, ql.model_type, ql.role_type, ql.special_feature, ql.cpp_id,
        CASE WHEN ql.quicklink_display_end_date &lt; CURRENT_DATE THEN 'Expired' ELSE ql.status END AS status,
        ql.created_at, ql.updated_at, ql.created_by, ql.updated_by,
-       COUNT(*) OVER () AS total_count          -- total ignoring LIMIT
+       COUNT(*) OVER () AS total_count
 FROM &lt;quick links table&gt; ql
-WHERE ( ... is_internal / participation rules ... )
+WHERE ql.is_current = TRUE
+  AND ( ... is_internal / participation rules ... )
   AND (%s::int[] IS NULL OR ql.id = ANY(%s))
 ORDER BY ql.display_order
 LIMIT %s OFFSET %s;</pre>
-<p>Known facts: DB = <b>portal_datastore</b> (PostgreSQL via RDS Proxy); client data comes through <b>FDW</b> schema <code>client_datastore</code> (e.g. <code>client_datastore.client_program_participant</code>); SQL returns <code>total_count</code>; SQL sets <b>Expired</b> using <code>CURRENT_DATE</code>.</p>
-<div class="tip">Copy the SQL into DBeaver/pgAdmin, replace each <code>%s</code> with a test value, and run it — the fastest way to learn it.</div>
-</div></div>
-
-<div class="card step"><div class="num">8</div><div>
-<h3 style="margin-top:0">Rows → models <span class="tag seen">SEEN</span></h3>
-<pre>total_count = rows[0].total_count if hasattr(rows[0], "total_count") else len(rows)
-quick_links = [self._row_to_quick_link(row, function_scope) for row in rows]</pre>
-<div class="tablewrap"><table>
-<tr><th>DB column</th><th>QuickLink field</th><th>Note</th></tr>
-<tr><td>id, url_label, url, open_in_new_tab, display_order</td><td>same</td><td>required</td></tr>
-<tr><td>category, program, program_instance, model_type, role_type, special_feature, cpp_id</td><td>same</td><td>optional (<code>getattr(..., None)</code>)</td></tr>
-<tr><td>quicklink_display_start_date / end_date</td><td>same</td><td></td></tr>
-<tr><td>status</td><td>status</td><td>already "Expired" if past end date</td></tr>
-<tr><td>created_at, updated_at</td><td>same</td><td>converted to UTC by <code>_as_utc()</code></td></tr>
-<tr><td>created_by, updated_by</td><td>same</td><td></td></tr>
-<tr><td>—</td><td><b>is_editable</b></td><td>MANAGE only: <code>status not in (INACTIVE, EXPIRED)</code></td></tr>
-</table></div>
+<p>Facts: DB <b>portal_datastore</b>; client data via FDW <code>client_datastore</code>; models have <code>quicklink_skey</code>, <code>quicklink_state_type_id</code>, <code>is_current</code> → table keeps <b>versions</b>; SQL sets <b>Expired</b> via <code>CURRENT_DATE</code>.</p>
 </div></div>
 
 <div class="card step"><div class="num">9</div><div>
-<h3 style="margin-top:0">Pagination <span class="tag seen">SEEN</span></h3>
-<pre>has_more = pagination.offset + len(quick_links) &lt; total_count
-Pagination(total=total_count if pagination.offset == 0 else None,   # total only on page 1
-           limit=pagination.limit, offset=pagination.offset,
-           result_set_id=pagination.result_set_id or f"rs_ql_{timestamp}",
-           has_more=has_more)
-return QuickLinkListResponse(quick_links=quick_links, pagination=pagination_metadata)</pre>
-</div></div>
-
-<div class="card step"><div class="num">10</div><div>
-<h3 style="margin-top:0">Response JSON (example)</h3>
+<h3>Rows → models → pagination <span class="tag seen">CONFIRMED</span></h3>
+<pre>total_count = rows[0].total_count if hasattr(rows[0], "total_count") else len(rows)
+quick_links = [self._row_to_quick_link(row, function_scope) for row in rows]
+has_more    = pagination.offset + len(quick_links) &lt; total_count
+Pagination(total=total_count if pagination.offset == 0 else None, limit=..., offset=...,
+           result_set_id=pagination.result_set_id or f"rs_ql_{timestamp}", has_more=has_more)</pre>
 <pre>{
-  "quick_links": [
-    { "id": 12, "url_label": "Client Access Portal", "category": "Apps",
-      "url": "https://...", "open_in_new_tab": true, "display_order": 1,
-      "status": "Active", "cpp_id": null,
-      "created_at": "2026-07-13T17:40:00+00:00", "is_editable": null }
-  ],
+  "quick_links": [ { "id": 12, "url_label": "Client Access Portal", "url": "https://...",
+                     "open_in_new_tab": true, "display_order": 1, "status": "Active",
+                     "created_at": "2026-07-13T17:40:00+00:00", "is_editable": null } ],
   "pagination": { "total": 25, "limit": 10, "offset": 0,
                   "result_set_id": "rs_ql_1760000000.0", "has_more": true }
 }</pre>
-<p><span class="tag verify">VERIFY</span> Field names may be camelCase if the Pydantic model uses aliases.</p>
 </div></div>
 
-<div class="card step"><div class="num">11</div><div>
-<h3 style="margin-top:0">Errors <span class="tag seen">SEEN</span></h3>
+<div class="card step"><div class="num">10</div><div>
+<h3>All GET errors</h3>
 <div class="tablewrap"><table>
-<tr><th>Situation</th><th>Result</th></tr>
-<tr><td>Any exception during search</td><td><code>internal_server_error(ERROR_CODE_RETRIEVING_DATA, ...)</code> → 500</td></tr>
-<tr><td>GET by id, no row</td><td><code>not_found("NOT_FOUND", ...)</code> → 404</td></tr>
-<tr><td>Bad / expired token</td><td>rejected by auth dependency → 401/403 <span class="tag verify">VERIFY</span></td></tr>
+<tr><th>Situation</th><th>Where</th><th>Status</th></tr>
+<tr><td>Missing / invalid token</td><td>get_auth_service</td><td>401</td></tr>
+<tr><td>Unknown query param</td><td>_validate_query_parameters</td><td>400</td></tr>
+<tr><td>limit &gt; max, offset &lt; 0, bad function_scope</td><td>FastAPI Query validation</td><td>422 <span class="tag verify">VERIFY</span></td></tr>
+<tr><td>Accept not application/json</td><td>validate_media_type</td><td>406/400 <span class="tag verify">VERIFY</span></td></tr>
+<tr><td>External user + QuickLinksManagement</td><td>validate_internal_access</td><td>403</td></tr>
+<tr><td>DB / service exception</td><td>service → internal_server_error</td><td>500</td></tr>
 </table></div>
-<p>Services <b>return</b> <code>ErrorResponse</code> instead of raising; the router turns it into an HTTP status.</p>
 </div></div>
 
-<!-- ========== BY ID ========== -->
-<h2 id="byid">4. Second example — GET by id <span class="tag seen">SEEN</span></h2>
-<pre>GET /v1/quick-links/{id}
- → router → QuickLinksService.get_quick_link_by_id(id)
- → QuickLinksGetService.get_quick_link_by_id(id)
-     rows = self.db_quicklinks.execute_query(GET_QUICK_LINK_BY_ID, (quick_link_id,),
-                                             fetch_one=False, use_named_tuples=True)
-     no rows → 404
-     else    → _row_to_quick_link(rows[0], FunctionScopeEnum.MANAGE)</pre>
-<div class="tip"><code>(quick_link_id,)</code> — the trailing comma makes a one-item tuple. Required.</div>
+<!-- ===================== POST ===================== -->
+<h2 id="post">4. <span class="m post">POST</span>/v1/quick-links — create <span class="tag seen">CONFIRMED</span></h2>
+<pre>POST {{baseUrl}}/v1/quick-links
+Authorization: Bearer &lt;token&gt;   Accept: application/json   Content-Type: application/json
+Body: QuickLinkCreateRequest</pre>
+<ol>
+<li>Body parsed into <code>QuickLinkCreateRequest</code> — Pydantic validators run (absolute HTTPS URL, label, dates, category fields).</li>
+<li><code>validate_accept_header</code> + <code>validate_media_type</code>.</li>
+<li><code>validate_content_type(content_type, accept)</code> — body must be JSON.</li>
+<li><code>validate_internal_access</code> — <b>external users → 403</b>.</li>
+<li><code>quick_links_service.create_quick_link(request, user_email)</code> → <code>QuickLinksCreateService</code> → <code>create_quick_link_queries.py</code> (CTEs validate CPP IDs / participation, then INSERT).</li>
+<li><code>ErrorResponse</code> → its status (409 duplicate…); success → <code>convert_model_to_response(result, accept, "QuickLink", 201)</code>.</li>
+<li>Exception → 500 "Error creating quick link".</li>
+</ol>
 
-<!-- ========== NEW API ========== -->
-<h2 id="new">5. Build a NEW API the same way</h2>
-<p>Example: feature <code>favorites</code> with <code>GET /v1/favorites</code>.</p>
+<!-- ===================== PATCH ===================== -->
+<h2 id="patch">5. <span class="m patch">PATCH</span>/v1/quick-links/{id}?action=… — update or soft delete <span class="tag seen">CONFIRMED</span></h2>
+<div class="split">
+<pre># UPDATE
+PATCH /v1/quick-links/12?action=&lt;UPDATE value&gt;
+{ "updated_at": "&lt;from last GET&gt;",
+  "category": "...",
+  "url_label": "New label" }</pre>
+<pre># DELETE (soft)
+PATCH /v1/quick-links/12?action=&lt;DELETE value&gt;
+{ "updated_at": "&lt;from last GET&gt;" }</pre>
+</div>
+<p><span class="tag verify">VERIFY</span> exact action values in <code>ActionEnum</code> (<code>common/models.py</code>).</p>
+<ol>
+<li>Accept / media type validation.</li>
+<li><code>_validate_action_param(action)</code> — must be an <code>ActionEnum</code> value → else 400.</li>
+<li><code>_build_patch_request(action, body)</code>:
+  <ul><li><b>DELETE</b>: only <code>updated_at</code> required; other fields ignored so validators can't block a delete.</li>
+  <li><b>UPDATE</b>: <code>updated_at</code> <b>and</b> <code>category</code> required → <code>QuickLinkPatchRequest(**body)</code>.</li></ul></li>
+<li><code>validate_internal_access</code> → external users 403.</li>
+<li>UPDATE → <code>update_quick_link</code> → 200 + QuickLink · DELETE → <code>delete_quick_link</code> → 200 <code>{"message": "Quick link deleted successfully"}</code>.</li>
+<li>Errors: 400, 401, 403, 404 not found, <b>409 version mismatch</b>, <b>422 cannot edit expired/inactive</b>, 500.</li>
+</ol>
+<div class="tip"><b>Optimistic locking:</b> you send back the <code>updated_at</code> you received from GET. If someone changed the link meanwhile, the timestamps differ and you get <b>409 Conflict</b> instead of overwriting their change.</div>
 
-<div class="card step"><div class="num">1</div><div><b>Create folders</b> (copy the quicklinks layout)
-<pre>favorites/  model/  router/  service/  sql/     (each with __init__.py)</pre></div></div>
+<!-- ===================== MODELS ===================== -->
+<h2 id="models">6. Models — quick_link_models.py <span class="tag seen">CONFIRMED</span></h2>
+<pre>class FunctionScopeEnum(str, Enum):
+    VIEW   = "ViewQuickLinks"
+    MANAGE = "QuickLinksManagement"</pre>
+<ul>
+<li><b>Models:</b> <code>QuickLink</code> (response), <code>QuickLinkCreateRequest</code> (POST), <code>QuickLinkPatchRequest</code> (PATCH), <code>QuickLinkListResponse</code> (list + Pagination).</li>
+<li><b>Enums</b> from <code>common.models</code>: CategoryEnum, StatusEnum, CreateStatusEnum, UpdateStatusEnum.</li>
+<li><b>Validators</b> from <code>common.validators</code>: validate_url_format, validate_url_length, validate_title_label, validate_alphanumeric, validate_category_fields, validate_effective_dates.</li>
+<li><b>DESC_* constants</b> = field descriptions shown in Swagger.</li>
+<li><b>Fields:</b> id, url_label, category, icon_identifier, icon_label, url, display_order, open_in_new_tab, program, program_instance, model_type, role_type, special_feature, cpp_id, status, display start/end dates, created/updated at/by, is_editable, quicklink_skey, quicklink_state_type_id, is_current.</li>
+<li><code>normalize_display_start_date(v)</code> accepts date, datetime or ISO string (handles <code>Z</code>) → returns a date.</li>
+</ul>
+
+<!-- ===================== NEW API ===================== -->
+<h2 id="new">7. Build a NEW API the same way</h2>
+<p>Example: <span class="m get">GET</span><code>/v1/favorites</code></p>
+
+<div class="card step"><div class="num">1</div><div><b>Folders</b> — <code>favorites/model</code>, <code>router</code>, <code>service</code>, <code>sql</code> (each with <code>__init__.py</code>).</div></div>
 
 <div class="card step"><div class="num">2</div><div><b>Model</b> — <code>favorites/model/favorite_models.py</code>
 <pre>class Favorite(BaseModel):
-    id: int
-    name: str
-    url: str
+    id: int = Field(..., description="Unique id")
+    name: str = Field(..., description="Display name")
+    url: str = Field(..., description="Absolute HTTPS URL")
     created_at: Optional[datetime] = None
 
 class FavoriteListResponse(BaseModel):
@@ -323,68 +400,99 @@ class FavoriteListResponse(BaseModel):
 
 <div class="card step"><div class="num">3</div><div><b>SQL</b> — <code>favorites/sql/get_favorites_queries.py</code>
 <pre>GET_FAVORITES = """
-    SELECT f.id, f.name, f.url, f.created_at,
-           COUNT(*) OVER () AS total_count
+    SELECT f.id, f.name, f.url, f.created_at, COUNT(*) OVER () AS total_count
     FROM &lt;schema&gt;.favorites f
     WHERE f.user_email = %s
     ORDER BY f.created_at DESC
     LIMIT %s OFFSET %s
 """</pre></div></div>
 
-<div class="card step"><div class="num">4</div><div><b>Service</b> — <code>favorites/service/favorites_get_service.py</code>
-<pre>@lru_cache()
-def get_favorites_service_singleton() -&gt; "FavoritesGetService":
+<div class="card step"><div class="num">4</div><div><b>Service</b> — <code>favorites/service/favorites_service.py</code>
+<pre>logger = LoggingUtil.get_logger(__name__)
+
+@lru_cache()
+def get_favorites_service_singleton() -&gt; "FavoritesService":
     db_name = settings.get_property("database", "portal_db_name")
     db_user = settings.get_property("database", "portal_db_user")
-    return FavoritesGetService(get_manager().get_service(db_name=db_name, db_user=db_user))
+    return FavoritesService(get_manager().get_service(db_name=db_name, db_user=db_user))
 
-class FavoritesGetService:
+class FavoritesService:
     def __init__(self, db):
         self.db = db
 
-    def search_favorites(self, user_email: str, pagination: PaginationRequest):
+    def search_favorites(self, user_email, pagination) -&gt; FavoriteListResponse | ErrorResponse:
         try:
             rows = self.db.execute_query(GET_FAVORITES,
                                          (user_email, pagination.limit, pagination.offset),
                                          fetch_one=False, use_named_tuples=True) or []
             total = rows[0].total_count if rows else 0
             items = [Favorite(id=r.id, name=r.name, url=r.url, created_at=r.created_at) for r in rows]
-            return FavoriteListResponse(
-                favorites=items,
-                pagination=Pagination(total=total, limit=pagination.limit, offset=pagination.offset,
-                                      result_set_id=None,
-                                      has_more=pagination.offset + len(items) &lt; total))
+            return FavoriteListResponse(favorites=items, pagination=Pagination(
+                total=total if pagination.offset == 0 else None,
+                limit=pagination.limit, offset=pagination.offset, result_set_id=None,
+                has_more=pagination.offset + len(items) &lt; total))
         except Exception:
             logger.exception("Error searching favorites")
             return internal_server_error(ERROR_CODE_RETRIEVING_DATA, ERROR_MSG_RETRIEVING_DATA)</pre></div></div>
 
-<div class="card step"><div class="num">5</div><div><b>Router</b> — copy <code>quick_links_router.py</code>, keep the <b>same auth dependency</b>, call your service, map <code>ErrorResponse</code> the same way.</div></div>
-<div class="card step"><div class="num">6</div><div><b>Register</b> the router in <code>main.py</code> next to quick links.</div></div>
-<div class="card step"><div class="num">7</div><div><b>DB table</b> — check how quick links tables were created (<code>infra/</code> or migrations folder) and do the same.</div></div>
-<div class="card step"><div class="num">8</div><div><b>Tests</b> — copy the quick links pytest tests, mock <code>execute_query</code>.</div></div>
-<div class="card step"><div class="num">9</div><div><b>Postman</b> — duplicate "GET Quick-links", change URL to <code>/v1/favorites</code>.</div></div>
-<div class="card step"><div class="num">10</div><div><b>Docs</b> — check FastAPI docs via the "GET api-docs" Postman request.</div></div>
+<div class="card step"><div class="num">5</div><div><b>Router</b> — <code>favorites/router/favorites_router.py</code>
+<pre>logger = LoggingUtil.get_logger(__name__)
+router = APIRouter(tags=["Favorites"])
 
-<!-- ========== TODO ========== -->
-<h2 id="todo">6. Open these files next</h2>
+@router.get("", summary="Get favorites", response_model=FavoriteListResponse,
+            responses={400: {"model": ErrorResponse}, 401: {"model": ErrorResponse},
+                       500: {"model": ErrorResponse}})
+async def get_favorites(
+    request: Request,
+    auth: Annotated[AuthService, Depends(get_auth_service)],
+    user_context: Annotated[UserContext, Depends(get_user_context)],
+    accept: Annotated[Optional[str], Header(alias="Accept")] = MediaType.APPLICATION_JSON,
+    page_limit: Annotated[int, Query(ge=1, le=100, alias="limit")] = 100,
+    page_offset: Annotated[int, Query(ge=0, alias="offset")] = 0,
+    service: Annotated[FavoritesService, Depends(get_favorites_service_singleton)] = None,
+) -&gt; FavoriteListResponse | JSONResponse:
+    accept = validate_accept_header(accept)
+    error = validate_media_type(accept)
+    if error:
+        return convert_model_to_response(error, accept, "ErrorResponse", error.status)
+
+    pagination = PaginationRequest(limit=page_limit, offset=page_offset, result_set_id=None)
+    try:
+        result = service.search_favorites(user_context.email, pagination)
+        if isinstance(result, ErrorResponse):
+            return convert_model_to_response(result, accept, "ErrorResponse", result.status)
+        return convert_model_to_response(result, accept, "FavoriteListResponse")
+    except Exception:
+        logger.exception("Unhandled exception in get_favorites")
+        err = internal_server_error(ERROR_CODE_RETRIEVING_DATA, ERROR_MSG_RETRIEVING_DATA)
+        return convert_model_to_response(err, accept, "ErrorResponse", err.status)</pre>
+<p>Add <code>_validate_query_parameters</code> / <code>validate_internal_access</code> if your API needs them.</p></div></div>
+
+<div class="card step"><div class="num">6</div><div><b>Register</b> in <code>main.py</code> — copy the quick links <code>include_router</code> line with <code>prefix="/v1/favorites"</code>.</div></div>
+<div class="card step"><div class="num">7</div><div><b>Config</b> — add a <code>[favorites]</code> section if you need defaults (like <code>[quicklinks] default_page_limit</code>).</div></div>
+<div class="card step"><div class="num">8</div><div><b>DB table</b> — follow how quick links tables were created (<code>infra/</code> or migrations) <span class="tag verify">VERIFY</span>.</div></div>
+<div class="card step"><div class="num">9</div><div><b>Tests</b> — <code>app.dependency_overrides[get_favorites_service_singleton] = lambda: FakeService()</code>; mock <code>execute_query</code> in service tests.</div></div>
+<div class="card step"><div class="num">10</div><div><b>Postman</b> — duplicate "GET Quick-links", change URL to <code>/v1/favorites</code>.</div></div>
+
+<!-- ===================== TODO ===================== -->
+<h2 id="todo">8. Still to check</h2>
 <ul class="check">
-<li><code>quicklinks/router/quick_links_router.py</code> — endpoints, auth, error → HTTP</li>
-<li><code>quicklinks/sql/get_quick_links_queries.py</code> — real VIEW / MANAGEMENT SQL</li>
-<li><code>quicklinks/service/quick_links_base_service.py</code> — base class</li>
-<li><code>quicklinks/model/quick_link_models.py</code> — fields, enums, aliases</li>
-<li><code>main.py</code> — <code>include_router</code></li>
-<li>config files — <code>[database] portal_db_name / portal_db_user</code></li>
+<li><code>main.py</code> — exact <code>include_router</code> prefix</li>
+<li><code>sql/get_quick_links_queries.py</code> — real VIEW / MANAGEMENT SQL</li>
+<li><code>common/user_context.py</code> — how email / is_internal come from the JWT</li>
+<li><code>common/models.py</code> — ActionEnum values for PATCH</li>
+<li>create / update services — POST/PATCH SQL flow, 409 / 422 checks</li>
+<li>Global exception handler (422 → 400?) — search <code>exception_handler</code></li>
 </ul>
-<p>Copilot prompt to fill the gaps:</p>
-<pre>#codebase Using quicklinks-api-flow.md, open the router, get_quick_links_queries.py, base service and models, and replace every VERIFY item with the real code and SQL.</pre>
+<pre>#codebase Using quicklinks-api-flow.md, open main.py, get_quick_links_queries.py, common/user_context.py, common/models.py and the create/update services, and replace every 🔍 item with the real code and SQL.</pre>
 
-<!-- ========== DEBUG ========== -->
-<h2 id="debug">7. Debug it yourself</h2>
+<!-- ===================== DEBUG ===================== -->
+<h2 id="debug">9. Debug it yourself</h2>
 <ol>
-<li>Breakpoint in <code>QuickLinksGetService.search_quick_links</code> (VS Code → Run and Debug).</li>
-<li>Start the API locally (<code>localhost:8000</code>).</li>
+<li>Breakpoints: first line of <code>get_quick_links</code> (router) and <code>QuickLinksGetService.search_quick_links</code>.</li>
+<li>Run the API locally (<code>localhost:8000</code>) from VS Code Run and Debug.</li>
 <li>Postman: <code>GET localhost:8000/v1/quick-links?limit=10&amp;offset=0</code>.</li>
-<li>Step with F10/F11: router → facade → get service → <code>_execute_view_query</code>; inspect <code>params_tuple</code> and <code>rows</code>.</li>
+<li>Step with F10 / F11: router validations → facade → get service → <code>_execute_view_query</code>; inspect <code>params_tuple</code> and <code>rows</code>.</li>
 </ol>
 
 </div>
