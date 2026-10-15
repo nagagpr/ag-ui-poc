@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAGE ECS IAM Roles</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b2230;--muted:#5a6476;--line:#dce1e8;--accent:#1f4fbf;--accent-soft:#e7eefc;--code:#f2f4f8;--codeink:#1e2638;--k:#7a2fb8;--s:#0f7a45;--warn:#a85e00;--warn-soft:#fff4e2;--info-soft:#e8f1ff;--ok:#1d7d47;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+header.title{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--accent);border-radius:10px;padding:24px 26px;margin-bottom:18px}
+header.title h1{margin:0 0 6px;font-size:28px;line-height:1.25}
+header.title .sub{margin:0 0 14px;color:var(--muted);font-size:16px}
+header.title dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:14px}
+header.title dt{color:var(--muted)}
+header.title dd{margin:0}
+.status{display:inline-block;background:var(--warn-soft);color:var(--warn);font-weight:600;font-size:13px;padding:3px 10px;border-radius:999px;margin-bottom:12px}
+nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 22px;margin-bottom:8px}
+nav.toc h2{font-size:15px;margin:0 0 6px;border:0;padding:0}
+nav.toc ol{margin:0;padding-left:18px;columns:2;column-gap:28px}
+nav.toc a{color:var(--accent);text-decoration:none}
+@media (max-width:640px){nav.toc ol{columns:1}}
+h2{font-size:23px;margin:42px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:18px;margin:30px 0 8px;color:var(--accent)}
+h4{font-size:15px;margin:22px 0 6px}
+p{margin:8px 0}
+code{font-family:Consolas,"Cascadia Code",monospace;font-size:.88em;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600;margin:4px 0 10px}
+.who span{background:var(--accent);color:#fff;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+figure.code{margin:10px 0 14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--code)}
+figure.code figcaption{font:600 11px Consolas,monospace;color:var(--muted);padding:5px 12px;border-bottom:1px solid var(--line);letter-spacing:.06em}
+figure.code pre{margin:0;padding:12px 14px;overflow-x:auto;color:var(--codeink);font:12.5px/1.5 Consolas,"Cascadia Code",monospace}
+figure.code code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+.k{color:var(--k)}.s{color:var(--s)}
+.tw{overflow-x:auto;margin:10px 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);table-layout:fixed}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+th{background:var(--accent-soft)}
+td[class^="tag-"]{font-weight:600}
+.tag-keep,.tag-mandatory{color:var(--ok)}
+.tag-remove,.tag-decommission,.tag-not-required{color:var(--bad)}
+.tag-modify,.tag-confirm{color:var(--warn)}
+.tag-add{color:var(--accent)}
+.note{border-left:4px solid var(--accent);background:var(--info-soft);border-radius:6px;padding:10px 14px;margin:12px 0}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note p{margin:4px 0 0}
+ul.check{list-style:none;padding-left:4px}
+ul.check li{padding-left:28px;position:relative;margin:5px 0}
+ul.check li::before{content:"";position:absolute;left:0;top:4px;width:15px;height:15px;border:2px solid var(--accent);border-radius:3px}
+footer{margin-top:50px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+@media print{
+  :root{--bg:#fff;--card:#fff;--ink:#000;--muted:#444;--line:#bbb;--code:#f4f4f4;--codeink:#000}
+  body{font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  nav.toc{display:none}
+  h2{page-break-before:always}
+  h2:first-of-type{page-break-before:avoid}
+  h2,h3,h4{page-break-after:avoid}
+  figure.code,table,.note{page-break-inside:avoid}
+  figure.code pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:8pt}
+  .tw{overflow:visible}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="title">
+  <span class="status">For IT / Cloud team</span>
+  <h1>SAGE on Amazon ECS: IAM Roles to Create</h1>
+  <p class="sub">Four roles for deploying and running SAGE 5.0 on Amazon ECS (Express Mode, Fargate) through GitHub Actions</p>
+  <dl><dt>Version</dt><dd>Version 1.0 · 15 October 2026</dd><dt>Audience</dt><dd>IT / Cloud Infrastructure team</dd></dl>
+</header>
+
+<h2 id="roles-to-create">Roles to create</h2>
+<div class="tw"><table><colgroup><col style="width:27.3%"><col style="width:45.5%"><col style="width:27.3%"></colgroup><thead><tr><th>Role name</th><th>Purpose</th><th>Trusted by</th></tr></thead><tbody><tr><td>**1. <code>sage-github-actions-deploy-role</code><strong></strong></td><td>Lets the GitHub Actions pipeline push the image to ECR and create/update the ECS service. Used only for deployments</td><td>GitHub Actions (OIDC)</td></tr><tr><td>**2. <code>sage-ecs-task-execution-role</code><strong></strong></td><td>Lets ECS pull the container image from ECR and write container logs to CloudWatch when a task starts</td><td><code>ecs-tasks.amazonaws.com</code></td></tr><tr><td>**3. <code>sage-storage-task-role</code><strong></strong></td><td>Lets the running application read and write its files in <code>s3://&lt;S3_BUCKET&gt;/sage/</code> only</td><td><code>ecs-tasks.amazonaws.com</code></td></tr><tr><td>**4. <code>sage-ecs-infrastructure-role</code><strong></strong></td><td>Lets ECS Express Mode create and manage the load balancer, HTTPS certificate, target groups, security groups and auto scaling</td><td><code>ecs.amazonaws.com</code></td></tr></tbody></table></div>
+<p>Replace the placeholders before applying: <code>&lt;ACCOUNT_ID&gt;</code>, <code>&lt;REGION&gt;</code>, <code>&lt;ECS_CLUSTER&gt;</code>, <code>&lt;ECS_SERVICE&gt;</code>, <code>&lt;ECR_REPOSITORY&gt;</code>, <code>&lt;S3_BUCKET&gt;</code>, <code>&lt;GITHUB_OWNER&gt;</code>, <code>&lt;OWNER_ID&gt;</code>, <code>&lt;GITHUB_REPO&gt;</code>, <code>&lt;REPO_ID&gt;</code>, <code>&lt;GITHUB_ENVIRONMENT&gt;</code>.</p>
+<p><strong>Also needed once per account:</strong> the GitHub OIDC identity provider (<code>https://token.actions.githubusercontent.com</code>, audience <code>sts.amazonaws.com</code>), and the service-linked roles for <code>ecs.amazonaws.com</code>, <code>elasticloadbalancing.amazonaws.com</code> and <code>ecs.application-autoscaling.amazonaws.com</code>.</p>
+<h2 id="1-sage-github-actions-deploy-role">1. sage-github-actions-deploy-role</h2>
+<p><strong>Purpose:</strong> deployment only. GitHub Actions gets short-lived credentials through OIDC (no stored AWS keys), pushes the image to ECR, creates/updates the ECS Express Mode service, and passes roles 2–4 to ECS.</p>
+<p><strong>Trust policy</strong> (Web identity → GitHub OIDC; only the approved repository and environment):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">&quot;Version&quot;</span>: <span class="s">&quot;2012-10-17&quot;</span>,
+  <span class="k">&quot;Statement&quot;</span>: [
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;GitHubActionsOidcProductionEnvironment&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Principal&quot;</span>: {<span class="k">&quot;Federated&quot;</span>: &quot;arn:aws:iam::&lt;ACCOUNT_ID&gt;:oidc-provider/token.actions.githubusercontent.com&quot;},
+      <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;sts:AssumeRoleWithWebIdentity&quot;</span>,
+      <span class="k">&quot;Condition&quot;</span>: {
+        <span class="k">&quot;StringEquals&quot;</span>: {
+          <span class="k">&quot;token.actions.githubusercontent.com:aud&quot;</span>: <span class="s">&quot;sts.amazonaws.com&quot;</span>,
+          <span class="k">&quot;token.actions.githubusercontent.com:sub&quot;</span>: [
+            &quot;repo:&lt;GITHUB_OWNER&gt;@&lt;OWNER_ID&gt;/&lt;GITHUB_REPO&gt;@&lt;REPO_ID&gt;:environment:&lt;GITHUB_ENVIRONMENT&gt;&quot;
+          ]
+        }
+      }
+    }
+  ]
+}</code></pre></figure>
+<p><strong>Permissions</strong> (inline policy <code>sage-github-actions-deploy-role-policy</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">&quot;Version&quot;</span>: <span class="s">&quot;2012-10-17&quot;</span>,
+  <span class="k">&quot;Statement&quot;</span>: [
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcrAuthorizationToken&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;ecr:GetAuthorizationToken&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: <span class="s">&quot;*&quot;</span>
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcrPushApplicationImages&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [
+        <span class="s">&quot;ecr:BatchCheckLayerAvailability&quot;</span>, <span class="s">&quot;ecr:InitiateLayerUpload&quot;</span>, <span class="s">&quot;ecr:UploadLayerPart&quot;</span>,
+        <span class="s">&quot;ecr:CompleteLayerUpload&quot;</span>, <span class="s">&quot;ecr:PutImage&quot;</span>, <span class="s">&quot;ecr:BatchGetImage&quot;</span>, <span class="s">&quot;ecr:GetDownloadUrlForLayer&quot;</span>,
+        <span class="s">&quot;ecr:DescribeRepositories&quot;</span>, <span class="s">&quot;ecr:DescribeImages&quot;</span>
+      ],
+      <span class="k">&quot;Resource&quot;</span>: [&quot;arn:aws:ecr:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:repository/&lt;ECR_REPOSITORY&gt;&quot;]
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsTaskDefinitions&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [<span class="s">&quot;ecs:RegisterTaskDefinition&quot;</span>, <span class="s">&quot;ecs:DescribeTaskDefinition&quot;</span>], <span class="k">&quot;Resource&quot;</span>: <span class="s">&quot;*&quot;</span>,
+      <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;aws:RequestedRegion&quot;</span>: &quot;&lt;REGION&gt;&quot;}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsExpressModeServiceLifecycle&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [
+        <span class="s">&quot;ecs:CreateExpressGatewayService&quot;</span>, <span class="s">&quot;ecs:UpdateExpressGatewayService&quot;</span>,
+        <span class="s">&quot;ecs:DescribeExpressGatewayService&quot;</span>
+      ],
+      <span class="k">&quot;Resource&quot;</span>: <span class="s">&quot;*&quot;</span>, <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;aws:RequestedRegion&quot;</span>: &quot;&lt;REGION&gt;&quot;}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsDescribeCluster&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;ecs:DescribeClusters&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: &quot;arn:aws:ecs:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:cluster/&lt;ECS_CLUSTER&gt;&quot;
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsServiceStatus&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [<span class="s">&quot;ecs:DescribeServices&quot;</span>, <span class="s">&quot;ecs:UpdateService&quot;</span>, <span class="s">&quot;ecs:ListServiceDeployments&quot;</span>],
+      <span class="k">&quot;Resource&quot;</span>: [&quot;arn:aws:ecs:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:service/&lt;ECS_CLUSTER&gt;/&lt;ECS_SERVICE&gt;&quot;]
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsServiceDeploymentDetails&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;ecs:DescribeServiceDeployments&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: [&quot;arn:aws:ecs:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:service-deployment/&lt;ECS_CLUSTER&gt;/&lt;ECS_SERVICE&gt;/*&quot;]
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsTagOnCreate&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;ecs:TagResource&quot;</span>, <span class="k">&quot;Resource&quot;</span>: <span class="s">&quot;*&quot;</span>,
+      <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;aws:RequestedRegion&quot;</span>: &quot;&lt;REGION&gt;&quot;}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;PassApplicationTaskRoles&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;iam:PassRole&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: [
+        &quot;arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-ecs-task-execution-role&quot;,
+        &quot;arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-storage-task-role&quot;
+      ],
+      <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;iam:PassedToService&quot;</span>: <span class="s">&quot;ecs-tasks.amazonaws.com&quot;</span>}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;PassExpressModeInfrastructureRole&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;iam:PassRole&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: &quot;arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-ecs-infrastructure-role&quot;,
+      <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;iam:PassedToService&quot;</span>: <span class="s">&quot;ecs.amazonaws.com&quot;</span>}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsLogGroupSetup&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [<span class="s">&quot;logs:CreateLogGroup&quot;</span>, <span class="s">&quot;logs:TagResource&quot;</span>],
+      <span class="k">&quot;Resource&quot;</span>: &quot;arn:aws:logs:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:log-group:/aws/ecs/&lt;ECS_CLUSTER&gt;/*&quot;
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;DescribeLogGroups&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;logs:DescribeLogGroups&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: <span class="s">&quot;*&quot;</span>, <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;aws:RequestedRegion&quot;</span>: &quot;&lt;REGION&gt;&quot;}}
+    }
+  ]
+}</code></pre></figure>
+<h2 id="2-sage-ecs-task-execution-role">2. sage-ecs-task-execution-role</h2>
+<p><strong>Purpose:</strong> used by ECS while starting a container, to pull the image from ECR and send logs to CloudWatch. The application cannot use this role.</p>
+<p><strong>Trust policy</strong> (AWS service → Elastic Container Service Task):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">&quot;Version&quot;</span>: <span class="s">&quot;2012-10-17&quot;</span>,
+  <span class="k">&quot;Statement&quot;</span>: [
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsTasksAssumeRole&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Principal&quot;</span>: {<span class="k">&quot;Service&quot;</span>: <span class="s">&quot;ecs-tasks.amazonaws.com&quot;</span>}, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;sts:AssumeRole&quot;</span>,
+      <span class="k">&quot;Condition&quot;</span>: {
+        <span class="k">&quot;StringEquals&quot;</span>: {<span class="k">&quot;aws:SourceAccount&quot;</span>: &quot;&lt;ACCOUNT_ID&gt;&quot;},
+        <span class="k">&quot;ArnLike&quot;</span>: {<span class="k">&quot;aws:SourceArn&quot;</span>: &quot;arn:aws:ecs:&lt;REGION&gt;:&lt;ACCOUNT_ID&gt;:*&quot;}
+      }
+    }
+  ]
+}</code></pre></figure>
+<p><strong>Permissions:</strong> attach the AWS-managed policy **<code>AmazonECSTaskExecutionRolePolicy</code>**.</p>
+<h2 id="3-sage-storage-task-role">3. sage-storage-task-role</h2>
+<p><strong>Purpose:</strong> the application's own AWS identity. It can only read, write and delete files under the <code>sage/</code> folder of the SAGE bucket.</p>
+<p><strong>Trust policy:</strong> the same as role 2 (<code>ecs-tasks.amazonaws.com</code>).</p>
+<p><strong>Permissions</strong> (inline policy <code>sage-storage-task-role-policy</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">&quot;Version&quot;</span>: <span class="s">&quot;2012-10-17&quot;</span>,
+  <span class="k">&quot;Statement&quot;</span>: [
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;ListSagePrefixOnly&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;s3:ListBucket&quot;</span>,
+      <span class="k">&quot;Resource&quot;</span>: &quot;arn:aws:s3:::&lt;S3_BUCKET&gt;&quot;,
+      <span class="k">&quot;Condition&quot;</span>: {<span class="k">&quot;StringLike&quot;</span>: {<span class="k">&quot;s3:prefix&quot;</span>: [<span class="s">&quot;sage/&quot;</span>, <span class="s">&quot;sage/*&quot;</span>]}}
+    },
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;ReadWriteDeleteSageObjects&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Action&quot;</span>: [
+        <span class="s">&quot;s3:GetObject&quot;</span>, <span class="s">&quot;s3:PutObject&quot;</span>, <span class="s">&quot;s3:DeleteObject&quot;</span>, <span class="s">&quot;s3:AbortMultipartUpload&quot;</span>,
+        <span class="s">&quot;s3:ListMultipartUploadParts&quot;</span>
+      ],
+      <span class="k">&quot;Resource&quot;</span>: &quot;arn:aws:s3:::&lt;S3_BUCKET&gt;/sage/*&quot;
+    }
+  ]
+}</code></pre></figure>
+<h2 id="4-sage-ecs-infrastructure-role">4. sage-ecs-infrastructure-role</h2>
+<p><strong>Purpose:</strong> used by ECS Express Mode itself to create and manage the load balancer, HTTPS certificate, target groups, security groups and auto scaling for the service.</p>
+<p><strong>Trust policy</strong> (AWS service → Elastic Container Service):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">&quot;Version&quot;</span>: <span class="s">&quot;2012-10-17&quot;</span>,
+  <span class="k">&quot;Statement&quot;</span>: [
+    {
+      <span class="k">&quot;Sid&quot;</span>: <span class="s">&quot;EcsExpressModeAssumeRole&quot;</span>, <span class="k">&quot;Effect&quot;</span>: <span class="s">&quot;Allow&quot;</span>,
+      <span class="k">&quot;Principal&quot;</span>: {<span class="k">&quot;Service&quot;</span>: <span class="s">&quot;ecs.amazonaws.com&quot;</span>}, <span class="k">&quot;Action&quot;</span>: <span class="s">&quot;sts:AssumeRole&quot;</span>
+    }
+  ]
+}</code></pre></figure>
+<p><strong>Permissions:</strong> attach the AWS-managed policy **<code>AmazonECSInfrastructureRoleforExpressGatewayServices</code>**.</p>
+<footer>SAGE on Amazon ECS: IAM Roles to Create · Version 1.0 · 15 October 2026 · Contains placeholders only; no credentials or secret values.</footer>
+</div>
+</body>
+</html>
