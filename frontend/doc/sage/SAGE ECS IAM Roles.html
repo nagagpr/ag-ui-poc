@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!-- saved from url=(0076)file:///D:/Work/AI_Work/outsystems/sage-iam-guide/SAGE5_ECS_Setup_Guide.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAGE ECS IAM Roles</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b2230;--muted:#5a6476;--line:#dce1e8;--accent:#1f4fbf;--accent-soft:#e7eefc;--code:#f2f4f8;--codeink:#1e2638;--k:#7a2fb8;--s:#0f7a45;--warn:#a85e00;--warn-soft:#fff4e2;--info-soft:#e8f1ff;--ok:#1d7d47;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+header.title{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--accent);border-radius:10px;padding:24px 26px;margin-bottom:18px}
+header.title h1{margin:0 0 6px;font-size:28px;line-height:1.25}
+header.title .sub{margin:0 0 14px;color:var(--muted);font-size:16px}
+header.title dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:14px}
+header.title dt{color:var(--muted)}
+header.title dd{margin:0}
+.status{display:inline-block;background:var(--warn-soft);color:var(--warn);font-weight:600;font-size:13px;padding:3px 10px;border-radius:999px;margin-bottom:12px}
+nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 22px;margin-bottom:8px}
+nav.toc h2{font-size:15px;margin:0 0 6px;border:0;padding:0}
+nav.toc ol{margin:0;padding-left:18px;columns:2;column-gap:28px}
+nav.toc a{color:var(--accent);text-decoration:none}
+@media (max-width:640px){nav.toc ol{columns:1}}
+h2{font-size:23px;margin:42px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:18px;margin:30px 0 8px;color:var(--accent)}
+h4{font-size:15px;margin:22px 0 6px}
+p{margin:8px 0}
+code{font-family:Consolas,"Cascadia Code",monospace;font-size:.88em;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600;margin:4px 0 10px}
+.who span{background:var(--accent);color:#fff;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+figure.code{margin:10px 0 14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--code)}
+figure.code figcaption{font:600 11px Consolas,monospace;color:var(--muted);padding:5px 12px;border-bottom:1px solid var(--line);letter-spacing:.06em}
+figure.code pre{margin:0;padding:12px 14px;overflow-x:auto;color:var(--codeink);font:12.5px/1.5 Consolas,"Cascadia Code",monospace}
+figure.code code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+.k{color:var(--k)}.s{color:var(--s)}
+.tw{overflow-x:auto;margin:10px 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);table-layout:fixed}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+th{background:var(--accent-soft)}
+td[class^="tag-"]{font-weight:600}
+.tag-keep,.tag-mandatory{color:var(--ok)}
+.tag-remove,.tag-decommission,.tag-not-required{color:var(--bad)}
+.tag-modify,.tag-confirm{color:var(--warn)}
+.tag-add{color:var(--accent)}
+.note{border-left:4px solid var(--accent);background:var(--info-soft);border-radius:6px;padding:10px 14px;margin:12px 0}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note p{margin:4px 0 0}
+ul.check{list-style:none;padding-left:4px}
+ul.check li{padding-left:28px;position:relative;margin:5px 0}
+ul.check li::before{content:"";position:absolute;left:0;top:4px;width:15px;height:15px;border:2px solid var(--accent);border-radius:3px}
+footer{margin-top:50px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+@media print{
+  :root{--bg:#fff;--card:#fff;--ink:#000;--muted:#444;--line:#bbb;--code:#f4f4f4;--codeink:#000}
+  body{font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  nav.toc{display:none}
+  h2{page-break-before:always}
+  h2:first-of-type{page-break-before:avoid}
+  h2,h3,h4{page-break-after:avoid}
+  figure.code,table,.note{page-break-inside:avoid}
+  figure.code pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:8pt}
+  .tw{overflow:visible}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="title">
+  <span class="status">For IT / Cloud team and application team</span>
+  <h1>SAGE 5.0 on Amazon ECS: Setup Guide (after the IAM roles)</h1>
+  <p class="sub">Step-by-step setup of networking, load balancer, ECR, S3, CloudWatch, ECS and GitHub Actions for sage5.0 (manual / classic ECS on Fargate, no Express Mode, no default VPC)</p>
+  <dl><dt>Version</dt><dd>Version 1.0 · 18 October 2026</dd><dt>Audience</dt><dd>IT network team, IT / Cloud team, SAGE application team</dd></dl>
+</header>
+
+<h2 id="0-before-you-start">0. Before you start</h2>
+<p>The three IAM roles are already created (<code>sage-github-actions-deploy-role</code>, <code>sage-ecs-task-execution-role</code>, <code>sage-storage-task-role</code>). This guide creates everything else, in order. Each step shows the <strong>console</strong> path and the equivalent <strong>CloudShell</strong> command. Use either one.</p>
+<h3 id="0-1-values-used-in-this-guide">0.1 Values used in this guide</h3>
+<div class="tw"><table><colgroup><col style="width:30.0%"><col style="width:40.0%"><col style="width:30.0%"></colgroup><thead><tr><th>Name</th><th>Value</th><th>Fill in / confirm</th></tr></thead><tbody><tr><td>Account ID</td><td><code>&lt;ACCOUNT_ID&gt;</code></td><td class="tag-confirm">Confirm the target account</td></tr><tr><td>Region</td><td><code>us-east-1</code></td><td>—</td></tr><tr><td>GitHub repository</td><td><code>sanumolu-rnt-c/sage5.0</code>, branch <code>master</code>, environment <code>production</code></td><td class="tag-confirm">Confirm the branch name</td></tr><tr><td>ECR repository</td><td><code>sage5.0</code></td><td>—</td></tr><tr><td>ECS cluster</td><td><code>&lt;ECS_CLUSTER&gt;</code> (for example <code>sage</code>)</td><td class="tag-confirm">Confirm</td></tr><tr><td>ECS service / task definition family</td><td><code>sage5-0</code> (AWS doesn't allow <code>.</code> in these names)</td><td>—</td></tr><tr><td>Container port / health check</td><td><code>5000</code> / <code>/api/health</code> (must return HTTP 200)</td><td>—</td></tr><tr><td>CPU / memory</td><td>1024 (1 vCPU) / 2048 MB</td><td>—</td></tr><tr><td>Load balancer / target group</td><td><code>sage5-0-alb</code> / <code>sage5-0-tg</code></td><td>—</td></tr><tr><td>Security groups</td><td><code>sage5-0-alb-sg</code>, <code>sage5-0-ecs-sg</code>, <code>sage5-0-vpce-sg</code></td><td>—</td></tr><tr><td>Log group</td><td><code>/ecs/sage5.0</code></td><td>—</td></tr><tr><td>S3 bucket / prefix</td><td><code>&lt;S3_BUCKET&gt;</code> (DEV: <code>sage-storage-dev</code>) / <code>sage</code></td><td class="tag-confirm">Confirm per environment</td></tr><tr><td>VPC and subnets</td><td><code>&lt;VPC_ID&gt;</code>, <code>&lt;PRIVATE_SUBNET_1&gt;</code>, <code>&lt;PRIVATE_SUBNET_2&gt;</code> (2 AZs)</td><td><strong>From the IT network team</strong></td></tr><tr><td>Who may call sage5.0</td><td><code>&lt;CALLER_SG_ID&gt;</code> (e.g. sage-ui tasks) or <code>&lt;CORPORATE_CIDR&gt;</code></td><td class="tag-confirm">Confirm with the app team</td></tr></tbody></table></div>
+<h3 id="0-2-cloudshell-variables-run-once-per-cloudshell-session">0.2 CloudShell variables (run once per CloudShell session)</h3>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>export AWS_REGION=us-east-1
+export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+export CLUSTER=&lt;ECS_CLUSTER&gt;
+export BUCKET=&lt;S3_BUCKET&gt;
+export VPC_ID=&lt;VPC_ID&gt;
+export SUBNET_1=&lt;PRIVATE_SUBNET_1&gt;
+export SUBNET_2=&lt;PRIVATE_SUBNET_2&gt;
+echo "Account $ACCOUNT_ID  Region $AWS_REGION  VPC $VPC_ID"</code></pre></figure>
+<h3 id="0-3-order-of-work">0.3 Order of work</h3>
+<div class="tw"><table><colgroup><col style="width:12.5%"><col style="width:50.0%"><col style="width:37.5%"></colgroup><thead><tr><th>Step</th><th>Service</th><th>Performed by</th></tr></thead><tbody><tr><td>1</td><td>IAM: OIDC provider and ECS service-linked role (account level)</td><td>IT / Cloud team</td></tr><tr><td>2</td><td>VPC: private subnets and outbound internet (NAT)</td><td>IT network team</td></tr><tr><td>3</td><td>VPC endpoints (recommended)</td><td>IT network team</td></tr><tr><td>4</td><td>Security groups</td><td>IT / Cloud team</td></tr><tr><td>5</td><td>Amazon ECR repository</td><td>IT / Cloud team</td></tr><tr><td>6</td><td>Amazon S3 bucket</td><td>IT / Cloud team</td></tr><tr><td>7</td><td>CloudWatch log group</td><td>IT / Cloud team</td></tr><tr><td>8</td><td>Target group</td><td>IT / Cloud team</td></tr><tr><td>9</td><td>Application Load Balancer</td><td>IT / Cloud team</td></tr><tr><td>10</td><td>ECS cluster</td><td>IT / Cloud team</td></tr><tr><td>11</td><td>ECS task definition (first revision)</td><td>IT / Cloud team with Application team</td></tr><tr><td>12</td><td>ECS service</td><td>IT / Cloud team</td></tr><tr><td>13</td><td>GitHub environment, secrets, variables, workflow</td><td>Application team</td></tr><tr><td>14</td><td>First deployment and verification</td><td>Application team (IT observes)</td></tr></tbody></table></div>
+<h2 id="step-1-iam-account-level-prerequisites">Step 1 — IAM: account-level prerequisites</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<h4>1.1 GitHub OIDC identity provider (once per account)</h4>
+<p>Console: <strong>IAM → Identity providers → Add provider → OpenID Connect</strong>. Provider URL <code>https://token.actions.githubusercontent.com</code>, audience <code>sts.amazonaws.com</code> → <strong>Add provider</strong>. Skip this if it already exists.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code># Check first - skip creation if it is listed
+aws iam list-open-id-connect-providers
+
+aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com</code></pre></figure>
+<h4>1.2 ECS service-linked role (once per account)</h4>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com
+# "has been taken in this account" = it already exists, which is fine</code></pre></figure>
+<h4>1.3 Note the role ARNs (already created)</h4>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>for r in sage-github-actions-deploy-role sage-ecs-task-execution-role sage-storage-task-role; do
+  aws iam get-role --role-name $r --query Role.Arn --output text
+done</code></pre></figure>
+<h2 id="step-2-vpc-private-subnets-and-outbound-access">Step 2 — VPC: private subnets and outbound access</h2>
+<p class="who"><span>Performed by</span>IT network team</p>
+<p>Use an <strong>approved company VPC</strong>, not the default VPC. sage5.0 tasks and its load balancer run in <strong>2 private subnets in 2 different Availability Zones</strong>, with no public IP.</p>
+<ol><li>Console: <strong>VPC → Subnets</strong> → filter by <code>&lt;VPC_ID&gt;</code> → choose two private subnets in different AZs (for example <code>us-east-1a</code> and <code>us-east-1b</code>). Each needs at least ~20 free IP addresses.</li><li>Open each subnet's <strong>route table</strong>. It must have a route <code>0.0.0.0/0 → nat-…</code> (NAT Gateway) or to the company's approved egress (Transit Gateway / firewall). It must <strong>not</strong> route to an internet gateway (<code>igw-…</code>).</li><li>Outbound internet access is <strong>required</strong>. sage5.0 calls Jira (<code>tbscg-team.atlassian.net</code>), Azure OpenAI (<code>*.services.ai.azure.com</code>) and Figma (<code>api.figma.com</code>) at runtime. If egress goes through a firewall or proxy, allow these hosts on HTTPS 443.</li><li>Give the subnet IDs and the VPC ID to the IT / Cloud team for the next steps.</li></ol>
+<figure class="code"><figcaption>BASH</figcaption><pre><code># Check the two subnets: AZ, free IPs, and the default route of their route table
+aws ec2 describe-subnets --subnet-ids $SUBNET_1 $SUBNET_2 \
+  --query "Subnets[].{id:SubnetId,az:AvailabilityZone,freeIps:AvailableIpAddressCount}" --output table
+
+aws ec2 describe-route-tables --filters Name=association.subnet-id,Values=$SUBNET_1,$SUBNET_2 \
+  --query "RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].[GatewayId,NatGatewayId,TransitGatewayId]" --output text</code></pre></figure>
+<div class="note info"><strong>Only if there is no NAT Gateway yet</strong><p>Create one in a <strong>public</strong> subnet of the same VPC (VPC → NAT gateways → Create, connectivity type Public, allocate an Elastic IP). Then add <code>0.0.0.0/0 → nat-…</code> to the private subnets' route table. A NAT Gateway is billed hourly plus per GB of traffic.</p></div>
+<h2 id="step-3-vpc-endpoints-recommended">Step 3 — VPC endpoints (recommended)</h2>
+<p class="who"><span>Performed by</span>IT network team</p>
+<p>Endpoints keep ECR, CloudWatch Logs and S3 traffic inside AWS, so it doesn't go through the NAT Gateway (cheaper and more private). Skip them if the company already provides shared endpoints in this VPC.</p>
+<ol><li>Create security group <code>sage5-0-vpce-sg</code> in <code>&lt;VPC_ID&gt;</code>. Inbound: HTTPS 443 from <code>sage5-0-ecs-sg</code> (created in Step 4, so add this rule after Step 4). Outbound: default.</li><li>Console: <strong>VPC → Endpoints → Create endpoint</strong> → AWS services → create <strong>interface</strong> endpoints <code>com.amazonaws.us-east-1.ecr.api</code>, <code>com.amazonaws.us-east-1.ecr.dkr</code> and <code>com.amazonaws.us-east-1.logs</code>. Use the two private subnets and <code>sage5-0-vpce-sg</code>, with <strong>Enable private DNS name</strong> ticked.</li><li>Create a <strong>gateway</strong> endpoint <code>com.amazonaws.us-east-1.s3</code> attached to the private subnets' route table(s). ECR stores image layers in S3, and the app writes to S3.</li></ol>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>VPCE_SG=$(aws ec2 create-security-group --group-name sage5-0-vpce-sg \
+  --description "VPC endpoints for sage5.0" --vpc-id $VPC_ID --query GroupId --output text)
+
+for svc in ecr.api ecr.dkr logs; do
+  aws ec2 create-vpc-endpoint --vpc-id $VPC_ID --vpc-endpoint-type Interface \
+    --service-name com.amazonaws.$AWS_REGION.$svc \
+    --subnet-ids $SUBNET_1 $SUBNET_2 --security-group-ids $VPCE_SG --private-dns-enabled
+done
+
+RTB_IDS=$(aws ec2 describe-route-tables --filters Name=association.subnet-id,Values=$SUBNET_1,$SUBNET_2 \
+  --query "RouteTables[].RouteTableId" --output text)
+aws ec2 create-vpc-endpoint --vpc-id $VPC_ID --vpc-endpoint-type Gateway \
+  --service-name com.amazonaws.$AWS_REGION.s3 --route-table-ids $RTB_IDS</code></pre></figure>
+<h2 id="step-4-security-groups">Step 4 — Security groups</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<div class="tw"><table><colgroup><col style="width:27.3%"><col style="width:36.4%"><col style="width:36.4%"></colgroup><thead><tr><th>Security group</th><th>Inbound</th><th>Outbound</th></tr></thead><tbody><tr><td><code>sage5-0-alb-sg</code> (load balancer)</td><td>TCP 80 from <code>&lt;CALLER_SG_ID&gt;</code> (or <code>&lt;CORPORATE_CIDR&gt;</code>). <strong>Never</strong> <code>0.0.0.0/0</code> for an internal load balancer</td><td>TCP 5000 to <code>sage5-0-ecs-sg</code></td></tr><tr><td><code>sage5-0-ecs-sg</code> (ECS tasks)</td><td>TCP 5000 from <code>sage5-0-alb-sg</code> only</td><td>TCP 443 to <code>0.0.0.0/0</code> (ECR, logs, S3, Jira, Azure OpenAI, Figma)</td></tr><tr><td><code>sage5-0-vpce-sg</code> (endpoints, Step 3)</td><td>TCP 443 from <code>sage5-0-ecs-sg</code></td><td>Default</td></tr></tbody></table></div>
+<p>Console: <strong>EC2 → Security Groups → Create security group</strong> → VPC <code>&lt;VPC_ID&gt;</code> → add the rules above. Delete the default "all traffic" outbound rule where a narrower rule is listed.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>ALB_SG=$(aws ec2 create-security-group --group-name sage5-0-alb-sg \
+  --description "sage5.0 internal ALB" --vpc-id $VPC_ID --query GroupId --output text)
+ECS_SG=$(aws ec2 create-security-group --group-name sage5-0-ecs-sg \
+  --description "sage5.0 ECS tasks" --vpc-id $VPC_ID --query GroupId --output text)
+
+# Remove the default allow-all outbound rule from both
+for sg in $ALB_SG $ECS_SG; do
+  aws ec2 revoke-security-group-egress --group-id $sg --protocol -1 --cidr 0.0.0.0/0
+done
+
+# ALB: in from callers (use --cidr &lt;CORPORATE_CIDR&gt; instead of --source-group if needed), out to tasks
+aws ec2 authorize-security-group-ingress --group-id $ALB_SG --protocol tcp --port 80 --source-group &lt;CALLER_SG_ID&gt;
+aws ec2 authorize-security-group-egress  --group-id $ALB_SG --protocol tcp --port 5000 --source-group $ECS_SG
+
+# Tasks: in from ALB only, out HTTPS
+aws ec2 authorize-security-group-ingress --group-id $ECS_SG --protocol tcp --port 5000 --source-group $ALB_SG
+aws ec2 authorize-security-group-egress  --group-id $ECS_SG --protocol tcp --port 443 --cidr 0.0.0.0/0
+
+# Endpoints (Step 3): in HTTPS from tasks
+aws ec2 authorize-security-group-ingress --group-id $VPCE_SG --protocol tcp --port 443 --source-group $ECS_SG
+echo "ALB_SG=$ALB_SG ECS_SG=$ECS_SG"</code></pre></figure>
+<h2 id="step-5-amazon-ecr-repository">Step 5 — Amazon ECR repository</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>ECR → Private registry → Repositories → Create repository</strong> → name <code>sage5.0</code> → Image scan: <strong>Scan on push</strong> → Encryption: AES-256 → Create. Then <strong>Lifecycle policy</strong> → keep the last 30 images.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ecr create-repository --repository-name sage5.0 \
+  --image-scanning-configuration scanOnPush=true --encryption-configuration encryptionType=AES256
+
+aws ecr put-lifecycle-policy --repository-name sage5.0 --lifecycle-policy-text '{
+  "rules": [{"rulePriority": 1, "description": "Keep last 30 images",
+    "selection": {"tagStatus": "any", "countType": "imageCountMoreThan", "countNumber": 30},
+    "action": {"type": "expire"}}]}'</code></pre></figure>
+<h2 id="step-6-amazon-s3-bucket">Step 6 — Amazon S3 bucket</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>S3 → Create bucket</strong> → name <code>&lt;S3_BUCKET&gt;</code>, region <code>us-east-1</code> → Object Ownership: <strong>ACLs disabled</strong> → <strong>Block all public access: on</strong> → Default encryption: <strong>SSE-S3</strong> → Create. Then <strong>Permissions → Bucket policy</strong>, and paste the policy below. No folders are needed; <code>sage/</code> appears when the app writes its first file.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws s3api create-bucket --bucket $BUCKET --region $AWS_REGION    # us-east-1: no LocationConstraint
+
+aws s3api put-public-access-block --bucket $BUCKET --public-access-block-configuration \
+  BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true
+
+aws s3api put-bucket-encryption --bucket $BUCKET --server-side-encryption-configuration \
+  '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+
+aws s3api put-bucket-policy --bucket $BUCKET --policy '{
+  "Version": "2012-10-17",
+  "Statement": [{"Sid": "DenyInsecureTransport", "Effect": "Deny", "Principal": "*", "Action": "s3:*",
+    "Resource": ["arn:aws:s3:::'$BUCKET'", "arn:aws:s3:::'$BUCKET'/*"],
+    "Condition": {"Bool": {"aws:SecureTransport": "false"}}}]}'
+
+# Optional - only if audit files must be protected from overwrite:
+# aws s3api put-bucket-versioning --bucket $BUCKET --versioning-configuration Status=Enabled</code></pre></figure>
+<h2 id="step-7-cloudwatch-log-group">Step 7 — CloudWatch log group</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>CloudWatch → Log groups → Create log group</strong> → name <code>/ecs/sage5.0</code> → retention per company policy (example 30 days).</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws logs create-log-group --log-group-name /ecs/sage5.0
+aws logs put-retention-policy --log-group-name /ecs/sage5.0 --retention-in-days 30</code></pre></figure>
+<h2 id="step-8-target-group">Step 8 — Target group</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>EC2 → Target Groups → Create target group</strong> → target type <strong>IP addresses</strong> (required for Fargate) → name <code>sage5-0-tg</code> → protocol HTTP, port <strong>5000</strong> → VPC <code>&lt;VPC_ID&gt;</code> → health check path <strong><code>/api/health</code></strong>, success code <code>200</code> → <strong>Next</strong> → don't register targets (ECS does it) → Create.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>TG_ARN=$(aws elbv2 create-target-group --name sage5-0-tg --target-type ip \
+  --protocol HTTP --port 5000 --vpc-id $VPC_ID \
+  --health-check-path /api/health --matcher HttpCode=200 \
+  --health-check-interval-seconds 30 --healthy-threshold-count 2 --unhealthy-threshold-count 3 \
+  --query "TargetGroups[0].TargetGroupArn" --output text)
+
+# Faster deployments: wait 30 s (not the default 300 s) before removing old tasks
+aws elbv2 modify-target-group-attributes --target-group-arn $TG_ARN \
+  --attributes Key=deregistration_delay.timeout_seconds,Value=30
+echo "TG_ARN=$TG_ARN"</code></pre></figure>
+<h2 id="step-9-application-load-balancer">Step 9 — Application Load Balancer</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>EC2 → Load Balancers → Create → Application Load Balancer</strong> → name <code>sage5-0-alb</code> → scheme <strong>Internal</strong> → IPv4 → VPC <code>&lt;VPC_ID&gt;</code> → the 2 private subnets → security group <code>sage5-0-alb-sg</code> (remove <code>default</code>) → listener <strong>HTTP 80 → forward to </strong><strong><code>sage5-0-tg</code></strong> → Create. Note the <strong>DNS name</strong>; other services use it to call sage5.0.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>ALB_ARN=$(aws elbv2 create-load-balancer --name sage5-0-alb --type application --scheme internal \
+  --subnets $SUBNET_1 $SUBNET_2 --security-groups $ALB_SG \
+  --query "LoadBalancers[0].LoadBalancerArn" --output text)
+
+aws elbv2 create-listener --load-balancer-arn $ALB_ARN --protocol HTTP --port 80 \
+  --default-actions Type=forward,TargetGroupArn=$TG_ARN
+
+aws elbv2 describe-load-balancers --load-balancer-arns $ALB_ARN --query "LoadBalancers[0].DNSName" --output text</code></pre></figure>
+<div class="note warn"><strong>Only if users' browsers must reach sage5.0 directly</strong><p>Use scheme <strong>internet-facing</strong> in two <strong>public</strong> subnets. Add an <strong>HTTPS 443</strong> listener with the company ACM certificate (and an HTTP 80 → HTTPS 301 redirect), and allow 443 inbound from the approved CIDRs on <code>sage5-0-alb-sg</code>. Put AWS WAF in front if company policy requires it. The ECS tasks still stay in the private subnets.</p></div>
+<h2 id="step-10-ecs-cluster">Step 10 — ECS cluster</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>ECS → Clusters → Create cluster</strong> → name <code>&lt;ECS_CLUSTER&gt;</code> → Infrastructure: <strong>AWS Fargate (serverless)</strong> only → Monitoring: Container Insights (optional) → Create. Skip this step if the cluster already exists.</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ecs create-cluster --cluster-name $CLUSTER --capacity-providers FARGATE \
+  --settings name=containerInsights,value=enabled</code></pre></figure>
+<h2 id="step-11-ecs-task-definition-first-revision">Step 11 — ECS task definition (first revision)</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team with Application team</p>
+<p>The task definition says which image to run, with which roles, port, CPU/memory and log group. IT registers revision 1. After that, the pipeline registers a new revision on every deployment, changing only the image tag and the environment values.</p>
+<p>Save as <code>sage5-0-taskdef.json</code> (replace <code>&lt;ACCOUNT_ID&gt;</code>, <code>&lt;S3_BUCKET&gt;</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">"family"</span>: <span class="s">"sage5-0"</span>,
+  <span class="k">"requiresCompatibilities"</span>: [<span class="s">"FARGATE"</span>],
+  <span class="k">"networkMode"</span>: <span class="s">"awsvpc"</span>,
+  <span class="k">"cpu"</span>: <span class="s">"1024"</span>,
+  <span class="k">"memory"</span>: <span class="s">"2048"</span>,
+  <span class="k">"runtimePlatform"</span>: {<span class="k">"operatingSystemFamily"</span>: <span class="s">"LINUX"</span>, <span class="k">"cpuArchitecture"</span>: <span class="s">"X86_64"</span>},
+  <span class="k">"executionRoleArn"</span>: "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-ecs-task-execution-role",
+  <span class="k">"taskRoleArn"</span>: "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-storage-task-role",
+  <span class="k">"containerDefinitions"</span>: [
+    {
+      <span class="k">"name"</span>: <span class="s">"sage5-0"</span>,
+      <span class="k">"image"</span>: "&lt;ACCOUNT_ID&gt;.dkr.ecr.us-east-1.amazonaws.com/sage5.0:latest",
+      <span class="k">"essential"</span>: true,
+      <span class="k">"portMappings"</span>: [{<span class="k">"containerPort"</span>: 5000, <span class="k">"protocol"</span>: <span class="s">"tcp"</span>}],
+      <span class="k">"environment"</span>: [
+        {<span class="k">"name"</span>: <span class="s">"NODE_ENV"</span>, <span class="k">"value"</span>: <span class="s">"production"</span>},
+        {<span class="k">"name"</span>: <span class="s">"PORT"</span>, <span class="k">"value"</span>: <span class="s">"5000"</span>},
+        {<span class="k">"name"</span>: <span class="s">"AWS_REGION"</span>, <span class="k">"value"</span>: <span class="s">"us-east-1"</span>},
+        {<span class="k">"name"</span>: <span class="s">"STORAGE_DRIVER"</span>, <span class="k">"value"</span>: <span class="s">"s3"</span>},
+        {<span class="k">"name"</span>: <span class="s">"S3_BUCKET_NAME"</span>, <span class="k">"value"</span>: "&lt;S3_BUCKET&gt;"},
+        {<span class="k">"name"</span>: <span class="s">"S3_BASE_PREFIX"</span>, <span class="k">"value"</span>: <span class="s">"sage"</span>}
+      ],
+      <span class="k">"logConfiguration"</span>: {
+        <span class="k">"logDriver"</span>: <span class="s">"awslogs"</span>,
+        <span class="k">"options"</span>: {
+          <span class="k">"awslogs-group"</span>: <span class="s">"/ecs/sage5.0"</span>,
+          <span class="k">"awslogs-region"</span>: <span class="s">"us-east-1"</span>,
+          <span class="k">"awslogs-stream-prefix"</span>: <span class="s">"ecs"</span>
+        }
+      }
+    }
+  ]
+}</code></pre></figure>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ecs register-task-definition --cli-input-json file://sage5-0-taskdef.json \
+  --query "taskDefinition.taskDefinitionArn" --output text</code></pre></figure>
+<p>The image doesn't exist yet. That's fine, because the service is created with <strong>0 tasks</strong> in Step 12, and the first pipeline run pushes the image.</p>
+<h2 id="step-12-ecs-service">Step 12 — ECS service</h2>
+<p class="who"><span>Performed by</span>IT / Cloud team</p>
+<p>Console: <strong>ECS → Clusters → </strong><strong><code>&lt;ECS_CLUSTER&gt;</code></strong><strong> → Services → Create</strong>:</p>
+<ul><li>Compute options: <strong>Launch type → FARGATE</strong>, platform version LATEST.</li><li>Application type <strong>Service</strong>, family <code>sage5-0</code>, latest revision, service name <strong><code>sage5-0</code></strong>, desired tasks <strong>0</strong> (raised to 1 in Step 14).</li><li>Deployment: rolling update, <strong>min 100% / max 200%</strong>, <strong>deployment circuit breaker with rollback: on</strong>.</li><li>Networking: VPC <code>&lt;VPC_ID&gt;</code>, the 2 <strong>private</strong> subnets, security group <strong><code>sage5-0-ecs-sg</code></strong> only, <strong>Public IP: off</strong>.</li><li>Load balancing: Application Load Balancer → existing <code>sage5-0-alb</code> → container <code>sage5-0 5000:5000</code> → existing listener 80 → existing target group <code>sage5-0-tg</code>. Health check grace period <strong>120 seconds</strong>.</li></ul>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ecs create-service --cluster $CLUSTER --service-name sage5-0 \
+  --task-definition sage5-0 --desired-count 0 --launch-type FARGATE \
+  --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_1,$SUBNET_2],securityGroups=[$ECS_SG],assignPublicIp=DISABLED}" \
+  --load-balancers "targetGroupArn=$TG_ARN,containerName=sage5-0,containerPort=5000" \
+  --health-check-grace-period-seconds 120 \
+  --deployment-configuration "minimumHealthyPercent=100,maximumPercent=200,deploymentCircuitBreaker={enable=true,rollback=true}"</code></pre></figure>
+<p><strong>Hand over to the application team:</strong> account ID, cluster name, the three role ARNs, the ALB DNS name, and confirmation that service <code>sage5-0</code> exists.</p>
+<h2 id="step-13-github-configuration-and-workflow">Step 13 — GitHub configuration and workflow</h2>
+<p class="who"><span>Performed by</span>Application team</p>
+<h4>13.1 Environment</h4>
+<p>In <code>sanumolu-rnt-c/sage5.0</code>: <strong>Settings → Environments → New environment → </strong><strong><code>production</code></strong> → add <strong>Required reviewers</strong>, and limit deployment branches to <code>master</code>. The deploy role only trusts jobs running in this environment.</p>
+<h4>13.2 Secrets and variables</h4>
+<p><strong>Settings → Secrets and variables → Actions</strong>:</p>
+<div class="tw"><table><colgroup><col style="width:36.4%"><col style="width:45.5%"><col style="width:18.2%"></colgroup><thead><tr><th>Name</th><th>Value</th><th>Type</th></tr></thead><tbody><tr><td><code>AWS_DEPLOY_ROLE_ARN</code></td><td><code>arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-github-actions-deploy-role</code></td><td>Secret</td></tr><tr><td><code>JIRA_USER</code>, <code>JIRA_TOKEN</code>, <code>AZURE_OPENAI_API_KEY</code>, <code>FIGMA_TOKEN</code>, <code>SAGE_DATA_ENCRYPTION_KEY</code>, <code>SAGE_AUDIT_HMAC_KEY</code></td><td>Existing app secrets (use the <strong>rotated</strong> values)</td><td>Secret</td></tr><tr><td><code>AWS_REGION</code></td><td><code>us-east-1</code></td><td>Variable</td></tr><tr><td><code>ECS_CLUSTER</code></td><td><code>&lt;ECS_CLUSTER&gt;</code></td><td>Variable</td></tr><tr><td><code>S3_BUCKET_NAME</code> / <code>S3_BASE_PREFIX</code></td><td><code>&lt;S3_BUCKET&gt;</code> / <code>sage</code></td><td>Variable</td></tr><tr><td><code>JIRA_BASE_URL</code>, <code>JIRA_PROJECT_KEY</code>, <code>AZURE_OPENAI_ENDPOINT</code>, <code>CORS_ORIGINS</code>, …</td><td>Existing app variables</td><td>Variable</td></tr></tbody></table></div>
+<p>Delete <code>ECS_INFRASTRUCTURE_ROLE_ARN</code>; manual mode doesn't use it. <code>ECS_EXECUTION_ROLE_ARN</code> and <code>ECS_TASK_ROLE_ARN</code> are no longer read by the workflow, because the roles come from the registered task definition.</p>
+<h4>13.3 Workflow `.github/workflows/deploy-sage5.yml`</h4>
+<figure class="code"><figcaption>YAML</figcaption><pre><code>name: Deploy sage5.0 (ECS)
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # GitHub OIDC -&gt; sage-github-actions-deploy-role
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REPOSITORY: sage5.0
+  ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+  ECS_SERVICE: sage5-0
+  CONTAINER_NAME: sage5-0
+  TASK_FAMILY: sage5-0
+
+concurrency:
+  group: deploy-sage5
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production   # must match the deploy role trust policy
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: github-actions-sage5
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        id: build
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "image=$IMAGE" &gt;&gt; "$GITHUB_OUTPUT"
+
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition --task-definition "$TASK_FAMILY" \
+            --query taskDefinition &gt; task-definition.json
+
+      - name: Render new task definition (image + environment)
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build.outputs.image }}
+          environment-variables: |
+            NODE_ENV=production
+            PORT=5000
+            AWS_REGION=${{ vars.AWS_REGION }}
+            STORAGE_DRIVER=s3
+            S3_BUCKET_NAME=${{ vars.S3_BUCKET_NAME }}
+            S3_BASE_PREFIX=${{ vars.S3_BASE_PREFIX }}
+            JIRA_BASE_URL=${{ vars.JIRA_BASE_URL }}
+            JIRA_PROJECT_KEY=${{ vars.JIRA_PROJECT_KEY }}
+            AZURE_OPENAI_ENDPOINT=${{ vars.AZURE_OPENAI_ENDPOINT }}
+            JIRA_USER=${{ secrets.JIRA_USER }}
+            JIRA_TOKEN=${{ secrets.JIRA_TOKEN }}
+            AZURE_OPENAI_API_KEY=${{ secrets.AZURE_OPENAI_API_KEY }}
+            FIGMA_TOKEN=${{ secrets.FIGMA_TOKEN }}
+            SAGE_DATA_ENCRYPTION_KEY=${{ secrets.SAGE_DATA_ENCRYPTION_KEY }}
+            SAGE_AUDIT_HMAC_KEY=${{ secrets.SAGE_AUDIT_HMAC_KEY }}
+
+      - name: Deploy to ECS service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true</code></pre></figure>
+<p>Add any other app variables (Recorder, Playwright, Azure deployment names, timeouts) to the <code>environment-variables</code> list in the same way, and keep the existing build arguments (for example JFrog) in the build step if the Dockerfile needs them.</p>
+<div class="note warn"><strong>Secrets in environment variables</strong><p>Values passed this way are stored in the task definition and are visible to anyone with <code>ecs:DescribeTaskDefinition</code>. That matches today's setup, but it is a known risk. The better follow-up is to store them in AWS Secrets Manager and reference them as container <code>secrets</code>. That needs <code>secretsmanager:GetSecretValue</code> on the execution role.</p></div>
+<h2 id="step-14-first-deployment-and-verification">Step 14 — First deployment and verification</h2>
+<p class="who"><span>Performed by</span>Application team (IT observes)</p>
+<ol><li>GitHub → <strong>Actions → Deploy sage5.0 (ECS) → Run workflow</strong>, then approve the <code>production</code> gate.</li><li>Check that each step passed: credentials (OIDC trust OK) → ECR login → image push → task definition rendered → deploy.</li><li>Start the first task (IT, once): <code>aws ecs update-service --cluster $CLUSTER --service sage5-0 --desired-count 1</code>. Later deployments keep this count.</li><li><strong>ECS → cluster → sage5-0 → Deployments / Tasks</strong>: one task <strong>RUNNING</strong>, no <code>CannotPullContainerError</code> or <code>ResourceInitializationError</code> events.</li><li><strong>EC2 → Target Groups → sage5-0-tg → Targets</strong>: the task IP is <strong>healthy</strong>.</li><li><strong>CloudWatch → Log groups → /ecs/sage5.0</strong>: start-up log lines, and the server listening on port 5000.</li><li>From inside the VPC (for example a caller service or an SSM-connected host): <code>curl -s http://&lt;ALB_DNS_NAME&gt;/api/health</code> returns HTTP 200.</li><li>Run one app flow that saves a file, then <code>aws s3 ls s3://$BUCKET/sage/ --recursive</code> shows the new object.</li><li>Re-run the workflow once more: the new task becomes healthy and the old one is drained, with no downtime.</li></ol>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ecs describe-services --cluster $CLUSTER --services sage5-0 \
+  --query "services[0].{status:status,running:runningCount,desired:desiredCount,taskDef:taskDefinition}" --output table
+
+aws elbv2 describe-target-health --target-group-arn $TG_ARN \
+  --query "TargetHealthDescriptions[].{ip:Target.Id,state:TargetHealth.State,reason:TargetHealth.Reason}" --output table
+
+aws logs tail /ecs/sage5.0 --since 15m</code></pre></figure>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<div class="tw"><table><colgroup><col style="width:40.0%"><col style="width:60.0%"></colgroup><thead><tr><th>Symptom</th><th>Check / fix</th></tr></thead><tbody><tr><td><code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code></td><td>The job isn't running in environment <code>production</code>, or the trust <code>sub</code> doesn't match <code>repo:sanumolu-rnt-c@313004951/sage5.0@1384464230:environment:production</code></td></tr><tr><td><code>ecs:DescribeTaskDefinition</code> / <code>RegisterTaskDefinition</code> AccessDenied</td><td>Deploy role policy not saved, or the region condition doesn't match <code>us-east-1</code></td></tr><tr><td><code>iam:PassRole … not authorized</code> on deploy</td><td>Execution / task role ARNs in the task definition differ from those in the deploy role's PassRole statement</td></tr><tr><td><code>CannotPullContainerError</code> / <code>ResourceInitializationError</code></td><td>No route to ECR: check NAT or the ECR + S3 endpoints (Step 2/3), and that <code>sage5-0-ecs-sg</code> allows outbound 443 and <code>sage5-0-vpce-sg</code> allows inbound 443 from it. Also check the execution role has <code>AmazonECSTaskExecutionRolePolicy</code></td></tr><tr><td>Task starts then stops; target <code>unhealthy</code></td><td>App must listen on <code>0.0.0.0:5000</code>, <code>/api/health</code> must return 200 without login, <code>sage5-0-ecs-sg</code> must allow 5000 from <code>sage5-0-alb-sg</code>. Read <code>/ecs/sage5.0</code> logs first</td></tr><tr><td>Deployment rolled back by the circuit breaker</td><td>New revision never became healthy. See the row above; previous revision keeps running</td></tr><tr><td>App errors calling Jira / Azure OpenAI / Figma (timeouts)</td><td>No outbound internet from the private subnets (NAT or egress firewall rule missing)</td></tr><tr><td><code>AccessDenied</code> writing to S3</td><td><code>taskRoleArn</code> missing in the task definition, key outside <code>sage/</code>, or the app tried to delete (not allowed)</td></tr><tr><td>Callers get timeouts to the ALB</td><td><code>sage5-0-alb-sg</code> inbound doesn't include the caller's security group or CIDR</td></tr></tbody></table></div>
+<h2 id="final-checklist">Final checklist</h2>
+<ul class="check"><li>OIDC provider and ECS service-linked role exist</li><li>2 private subnets in 2 AZs with NAT / approved egress; Jira, Azure OpenAI and Figma reachable</li><li>VPC endpoints for ecr.api, ecr.dkr, logs and S3 (or company shared endpoints)</li><li>Security groups <code>sage5-0-alb-sg</code>, <code>sage5-0-ecs-sg</code>, <code>sage5-0-vpce-sg</code> with only the rules in Step 4</li><li>ECR repository <code>sage5.0</code> with scan on push and lifecycle policy</li><li>S3 bucket: public access blocked, SSE-S3, deny-non-TLS policy</li><li>Log group <code>/ecs/sage5.0</code> with retention</li><li>Target group <code>sage5-0-tg</code> (ip, 5000, <code>/api/health</code>) and internal ALB <code>sage5-0-alb</code> with listener 80</li><li>ECS cluster (Fargate), task definition <code>sage5-0</code> with both role ARNs, service <code>sage5-0</code> in private subnets, no public IP, circuit breaker on</li><li>GitHub <code>production</code> environment with reviewers; secrets and variables set; <code>ECS_INFRASTRUCTURE_ROLE_ARN</code> removed</li><li>First deployment healthy; logs visible; S3 write works; second deployment has no downtime</li><li>Jira, Azure OpenAI and Figma credentials rotated (they were exposed in a text file)</li></ul>
+<footer>SAGE 5.0 on Amazon ECS: Setup Guide (after the IAM roles) · Version 1.0 · 18 October 2026 · Contains placeholders only; no credentials or secret values.</footer>
+</div>
+
+</body></html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<!-- saved from url=(0081)file:///D:/Work/AI_Work/outsystems/sage-iam-guide/SAGE_ECS_IAM_Roles_Summary.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAGE ECS IAM Roles</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1b2230;--muted:#5a6476;--line:#dce1e8;--accent:#1f4fbf;--accent-soft:#e7eefc;--code:#f2f4f8;--codeink:#1e2638;--k:#7a2fb8;--s:#0f7a45;--warn:#a85e00;--warn-soft:#fff4e2;--info-soft:#e8f1ff;--ok:#1d7d47;--bad:#b3261e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}}
+:root[data-theme="dark"]{--bg:#12151b;--card:#1a1f27;--ink:#e5e9f0;--muted:#9aa4b6;--line:#2b323d;--accent:#86a6ff;--accent-soft:#222b42;--code:#0f1217;--codeink:#d6dcea;--k:#c79bff;--s:#6fd59c;--warn:#f0b25a;--warn-soft:#2c2416;--info-soft:#1b2538;--ok:#5bd08d;--bad:#ff8a80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 16px 80px}
+header.title{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--accent);border-radius:10px;padding:24px 26px;margin-bottom:18px}
+header.title h1{margin:0 0 6px;font-size:28px;line-height:1.25}
+header.title .sub{margin:0 0 14px;color:var(--muted);font-size:16px}
+header.title dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0;font-size:14px}
+header.title dt{color:var(--muted)}
+header.title dd{margin:0}
+.status{display:inline-block;background:var(--warn-soft);color:var(--warn);font-weight:600;font-size:13px;padding:3px 10px;border-radius:999px;margin-bottom:12px}
+nav.toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 22px;margin-bottom:8px}
+nav.toc h2{font-size:15px;margin:0 0 6px;border:0;padding:0}
+nav.toc ol{margin:0;padding-left:18px;columns:2;column-gap:28px}
+nav.toc a{color:var(--accent);text-decoration:none}
+@media (max-width:640px){nav.toc ol{columns:1}}
+h2{font-size:23px;margin:42px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:18px;margin:30px 0 8px;color:var(--accent)}
+h4{font-size:15px;margin:22px 0 6px}
+p{margin:8px 0}
+code{font-family:Consolas,"Cascadia Code",monospace;font-size:.88em;background:var(--code);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-weight:600;margin:4px 0 10px}
+.who span{background:var(--accent);color:#fff;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+figure.code{margin:10px 0 14px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--code)}
+figure.code figcaption{font:600 11px Consolas,monospace;color:var(--muted);padding:5px 12px;border-bottom:1px solid var(--line);letter-spacing:.06em}
+figure.code pre{margin:0;padding:12px 14px;overflow-x:auto;color:var(--codeink);font:12.5px/1.5 Consolas,"Cascadia Code",monospace}
+figure.code code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+.k{color:var(--k)}.s{color:var(--s)}
+.tw{overflow-x:auto;margin:10px 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--card);table-layout:fixed}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+th{background:var(--accent-soft)}
+td[class^="tag-"]{font-weight:600}
+.tag-keep,.tag-mandatory{color:var(--ok)}
+.tag-remove,.tag-decommission,.tag-not-required{color:var(--bad)}
+.tag-modify,.tag-confirm{color:var(--warn)}
+.tag-add{color:var(--accent)}
+.note{border-left:4px solid var(--accent);background:var(--info-soft);border-radius:6px;padding:10px 14px;margin:12px 0}
+.note.warn{border-left-color:var(--warn);background:var(--warn-soft)}
+.note p{margin:4px 0 0}
+ul.check{list-style:none;padding-left:4px}
+ul.check li{padding-left:28px;position:relative;margin:5px 0}
+ul.check li::before{content:"";position:absolute;left:0;top:4px;width:15px;height:15px;border:2px solid var(--accent);border-radius:3px}
+footer{margin-top:50px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:10px}
+@media print{
+  :root{--bg:#fff;--card:#fff;--ink:#000;--muted:#444;--line:#bbb;--code:#f4f4f4;--codeink:#000}
+  body{font-size:10.5pt}
+  .wrap{max-width:none;padding:0}
+  nav.toc{display:none}
+  h2{page-break-before:always}
+  h2:first-of-type{page-break-before:avoid}
+  h2,h3,h4{page-break-after:avoid}
+  figure.code,table,.note{page-break-inside:avoid}
+  figure.code pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:8pt}
+  .tw{overflow:visible}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="title">
+  <span class="status">For IT / Cloud team</span>
+  <h1>SAGE 5.0 on Amazon ECS: Roles and Resources to Create</h1>
+  <p class="sub">Manual (classic) ECS on Fargate · GitHub Actions deployment · no Express Mode · no default VPC</p>
+  <dl><dt>Version</dt><dd>Version 3.0 · 15 October 2026</dd><dt>Audience</dt><dd>IT / Cloud Infrastructure team</dd></dl>
+</header>
+
+<h2 id="roles-to-create">Roles to create</h2>
+<div class="tw"><table><colgroup><col style="width:27.3%"><col style="width:45.5%"><col style="width:27.3%"></colgroup><thead><tr><th>Role name</th><th>Purpose</th><th>Trusted by</th></tr></thead><tbody><tr><td>**1. <code>sage-github-actions-deploy-role</code><strong></strong></td><td>Lets the <code>sage5.0</code> GitHub Actions pipeline push the image to ECR, register a new task-definition revision and update the existing <code>sage5-0</code> ECS service. Used only for deployments</td><td>GitHub Actions (OIDC), repository <code>sanumolu-rnt-c/sage5.0</code>, environment <code>production</code></td></tr><tr><td>**2. <code>sage-ecs-task-execution-role</code><strong></strong></td><td>Lets ECS pull the <code>sage5.0</code> image from ECR and write container logs to CloudWatch when a task starts</td><td><code>ecs-tasks.amazonaws.com</code></td></tr><tr><td>**3. <code>sage-storage-task-role</code><strong></strong></td><td>Lets the running <code>sage5.0</code> application read and write files in <code>s3://&lt;S3_BUCKET&gt;/sage/</code> only (no delete)</td><td><code>ecs-tasks.amazonaws.com</code></td></tr></tbody></table></div>
+<p><strong>Naming:</strong> AWS does not allow <code>.</code> in ECS service, target group or load balancer names, so those use <code>sage5-0</code>. The GitHub repository, ECR repository and log group keep <code>sage5.0</code>. Placeholders still to fill: <code>&lt;ACCOUNT_ID&gt;</code>, <code>&lt;ECS_CLUSTER&gt;</code>, <code>&lt;S3_BUCKET&gt;</code> (DEV: <code>sage-storage-dev</code>).</p>
+<h2 id="other-resources-to-create-manually-in-this-order">Other resources to create manually (in this order)</h2>
+<div class="tw"><table><colgroup><col style="width:8.3%"><col style="width:25.0%"><col style="width:50.0%"><col style="width:16.7%"></colgroup><thead><tr><th>#</th><th>Resource</th><th>Settings for sage5.0</th><th>Who</th></tr></thead><tbody><tr><td>1</td><td>GitHub OIDC identity provider</td><td>IAM → Identity providers → OpenID Connect. URL <code>https://token.actions.githubusercontent.com</code>, audience <code>sts.amazonaws.com</code>. Once per account; skip if it already exists</td><td>IT</td></tr><tr><td>2</td><td>ECS service-linked role</td><td><code>aws iam create-service-linked-role --aws-service-name ecs.amazonaws.com</code> (once per account; skip if it exists)</td><td>IT</td></tr><tr><td>3</td><td>VPC and subnets</td><td>An approved company VPC (<strong>not</strong> the default VPC) with <strong>2 private subnets in 2 Availability Zones</strong>. sage5.0 has no public IP</td><td>IT</td></tr><tr><td>4</td><td>Outbound access</td><td><strong>NAT Gateway</strong> (or approved egress proxy) for the private subnets, so tasks can reach external services</td><td>IT</td></tr><tr><td>5</td><td>VPC endpoints (recommended)</td><td><code>ecr.api</code>, <code>ecr.dkr</code>, <code>logs</code> (interface) and <code>s3</code> (gateway). Keeps ECR, log and S3 traffic inside the VPC</td><td>IT</td></tr><tr><td>6</td><td>Security group <code>sage5-0-alb-sg</code></td><td>For the load balancer. Inbound TCP 80 <strong>only</strong> from the callers' security group (e.g. <code>sage-ui-ecs-sg</code>), not <code>0.0.0.0/0</code>. Outbound TCP 5000 to <code>sage5-0-ecs-sg</code></td><td>IT</td></tr><tr><td>7</td><td>Security group <code>sage5-0-ecs-sg</code></td><td>For the ECS tasks. Inbound TCP 5000 <strong>only</strong> from <code>sage5-0-alb-sg</code>. Outbound TCP 443</td><td>IT</td></tr><tr><td>8</td><td>Target group <code>sage5-0-tg</code></td><td>Target type <code>ip</code>, protocol HTTP, port <code>5000</code>, health check path <code>/api/health</code> (expects HTTP 200)</td><td>IT</td></tr><tr><td>9</td><td>Load balancer <code>sage5-0-alb</code></td><td>Application Load Balancer, scheme <strong>Internal</strong>, in the 2 private subnets, security group <code>sage5-0-alb-sg</code>, listener HTTP 80 → <code>sage5-0-tg</code>. Use <strong>Internet-facing</strong> with HTTPS 443 and the company ACM certificate instead if users' browsers call sage5.0 directly (confirm with the app team)</td><td>IT</td></tr><tr><td>10</td><td>ECR repository <code>sage5.0</code></td><td>Private, scan on push enabled, region <code>us-east-1</code></td><td>IT</td></tr><tr><td>11</td><td>S3 bucket <code>&lt;S3_BUCKET&gt;</code></td><td>Block all public access, default encryption (SSE-S3), deny non-HTTPS bucket policy. No folders needed; <code>sage/</code> appears on first write</td><td>IT</td></tr><tr><td>12</td><td>CloudWatch log group <code>/ecs/sage5.0</code></td><td>Set a retention period (e.g. 30 days) per company policy</td><td>IT</td></tr><tr><td>13</td><td>ECS cluster <code>&lt;ECS_CLUSTER&gt;</code></td><td>Infrastructure: AWS Fargate</td><td>IT</td></tr><tr><td>14</td><td>Task definition <code>sage5-0</code> (first revision)</td><td>Fargate, <code>awsvpc</code>, CPU 1024 / memory 2048, container port 5000, <code>executionRoleArn</code> = role 2, <code>taskRoleArn</code> = role 3, log driver <code>awslogs</code> → <code>/ecs/sage5.0</code></td><td>IT with app team</td></tr><tr><td>15</td><td>ECS service <code>sage5-0</code></td><td>Launch type Fargate, desired count 1, the 2 private subnets, security group <code>sage5-0-ecs-sg</code>, <strong>public IP disabled</strong>, load balancer <code>sage5-0-alb</code> → <code>sage5-0-tg</code> on port 5000</td><td>IT</td></tr><tr><td>16</td><td>GitHub settings (repository <code>sage5.0</code>)</td><td>Environment <code>production</code> (with required reviewers). Secrets: <code>AWS_DEPLOY_ROLE_ARN</code>, <code>ECS_EXECUTION_ROLE_ARN</code>, <code>ECS_TASK_ROLE_ARN</code> plus the existing app secrets (Jira, Azure OpenAI, Figma, encryption/HMAC keys). Variables: <code>AWS_REGION</code>, <code>ECS_CLUSTER</code>, <code>S3_BUCKET_NAME</code>, <code>S3_BASE_PREFIX</code> plus the existing app variables. <code>ECS_INFRASTRUCTURE_ROLE_ARN</code> is no longer needed</td><td>App team</td></tr></tbody></table></div>
+<p>After this, every push to <code>master</code> in <code>sage5.0</code> builds the image, pushes <code>sage5.0:&lt;git-sha&gt;</code> to ECR, registers a new task-definition revision and updates the <code>sage5-0</code> service. Nothing else is created by the pipeline.</p>
+<h2 id="1-sage-github-actions-deploy-role">1. sage-github-actions-deploy-role</h2>
+<p><strong>Purpose:</strong> deployment only. GitHub Actions gets short-lived credentials through OIDC (no stored AWS keys). It pushes the image to ECR, registers a new task-definition revision and updates the <strong>existing</strong> <code>sage5-0</code> service. It cannot create or delete clusters, services, load balancers, security groups or IAM roles.</p>
+<p><strong>Trust policy</strong> (Web identity → GitHub OIDC; only <code>sanumolu-rnt-c/sage5.0</code>, environment <code>production</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">"Version"</span>: <span class="s">"2012-10-17"</span>,
+  <span class="k">"Statement"</span>: [
+    {
+      <span class="k">"Sid"</span>: <span class="s">"GitHubActionsOidcProductionEnvironment"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Principal"</span>: {<span class="k">"Federated"</span>: "arn:aws:iam::&lt;ACCOUNT_ID&gt;:oidc-provider/token.actions.githubusercontent.com"},
+      <span class="k">"Action"</span>: <span class="s">"sts:AssumeRoleWithWebIdentity"</span>,
+      <span class="k">"Condition"</span>: {
+        <span class="k">"StringEquals"</span>: {
+          <span class="k">"token.actions.githubusercontent.com:aud"</span>: <span class="s">"sts.amazonaws.com"</span>,
+          <span class="k">"token.actions.githubusercontent.com:sub"</span>: [<span class="s">"repo:sanumolu-rnt-c@313004951/sage5.0@1384464230:environment:production"</span>]
+        }
+      }
+    }
+  ]
+}</code></pre></figure>
+<p><strong>Permissions</strong> (inline policy <code>sage-github-actions-deploy-role-policy</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">"Version"</span>: <span class="s">"2012-10-17"</span>,
+  <span class="k">"Statement"</span>: [
+    {
+      <span class="k">"Sid"</span>: <span class="s">"EcrAuthorizationToken"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>, <span class="k">"Action"</span>: <span class="s">"ecr:GetAuthorizationToken"</span>,
+      <span class="k">"Resource"</span>: <span class="s">"*"</span>
+    },
+    {
+      <span class="k">"Sid"</span>: <span class="s">"EcrPushApplicationImages"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Action"</span>: [
+        <span class="s">"ecr:BatchCheckLayerAvailability"</span>, <span class="s">"ecr:InitiateLayerUpload"</span>, <span class="s">"ecr:UploadLayerPart"</span>,
+        <span class="s">"ecr:CompleteLayerUpload"</span>, <span class="s">"ecr:PutImage"</span>, <span class="s">"ecr:BatchGetImage"</span>, <span class="s">"ecr:DescribeImages"</span>
+      ],
+      <span class="k">"Resource"</span>: ["arn:aws:ecr:us-east-1:&lt;ACCOUNT_ID&gt;:repository/sage5.0"]
+    },
+    {
+      <span class="k">"Sid"</span>: <span class="s">"EcsTaskDefinitions"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Action"</span>: [<span class="s">"ecs:RegisterTaskDefinition"</span>, <span class="s">"ecs:DescribeTaskDefinition"</span>], <span class="k">"Resource"</span>: <span class="s">"*"</span>,
+      <span class="k">"Condition"</span>: {<span class="k">"StringEquals"</span>: {<span class="k">"aws:RequestedRegion"</span>: <span class="s">"us-east-1"</span>}}
+    },
+    {
+      <span class="k">"Sid"</span>: <span class="s">"EcsUpdateExistingService"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Action"</span>: [<span class="s">"ecs:DescribeServices"</span>, <span class="s">"ecs:UpdateService"</span>],
+      <span class="k">"Resource"</span>: ["arn:aws:ecs:us-east-1:&lt;ACCOUNT_ID&gt;:service/&lt;ECS_CLUSTER&gt;/sage5-0"]
+    },
+    {
+      <span class="k">"Sid"</span>: <span class="s">"PassApplicationTaskRoles"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>, <span class="k">"Action"</span>: <span class="s">"iam:PassRole"</span>,
+      <span class="k">"Resource"</span>: [
+        "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-ecs-task-execution-role",
+        "arn:aws:iam::&lt;ACCOUNT_ID&gt;:role/sage-storage-task-role"
+      ],
+      <span class="k">"Condition"</span>: {<span class="k">"StringEquals"</span>: {<span class="k">"iam:PassedToService"</span>: <span class="s">"ecs-tasks.amazonaws.com"</span>}}
+    }
+  ]
+}</code></pre></figure>
+<h2 id="2-sage-ecs-task-execution-role">2. sage-ecs-task-execution-role</h2>
+<p><strong>Purpose:</strong> used by ECS while starting a <code>sage5.0</code> container, to pull the image from ECR and send logs to CloudWatch. The application cannot use this role. Goes in the task definition as <code>executionRoleArn</code>.</p>
+<p><strong>Trust policy</strong> (AWS service → Elastic Container Service Task):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">"Version"</span>: <span class="s">"2012-10-17"</span>,
+  <span class="k">"Statement"</span>: [
+    {
+      <span class="k">"Sid"</span>: <span class="s">"EcsTasksAssumeRole"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Principal"</span>: {<span class="k">"Service"</span>: <span class="s">"ecs-tasks.amazonaws.com"</span>}, <span class="k">"Action"</span>: <span class="s">"sts:AssumeRole"</span>,
+      <span class="k">"Condition"</span>: {
+        <span class="k">"StringEquals"</span>: {<span class="k">"aws:SourceAccount"</span>: "&lt;ACCOUNT_ID&gt;"},
+        <span class="k">"ArnLike"</span>: {<span class="k">"aws:SourceArn"</span>: "arn:aws:ecs:us-east-1:&lt;ACCOUNT_ID&gt;:*"}
+      }
+    }
+  ]
+}</code></pre></figure>
+<p><strong>Permissions:</strong> attach the AWS-managed policy **<code>AmazonECSTaskExecutionRolePolicy</code>**.</p>
+<h2 id="3-sage-storage-task-role">3. sage-storage-task-role</h2>
+<p><strong>Purpose:</strong> the <code>sage5.0</code> application's own AWS identity. It can only read and write files under the <code>sage/</code> folder of the SAGE bucket. It cannot delete files. Goes in the task definition as <code>taskRoleArn</code>.</p>
+<p><strong>Trust policy:</strong> the same as role 2 (<code>ecs-tasks.amazonaws.com</code>).</p>
+<p><strong>Permissions</strong> (inline policy <code>sage-storage-task-role-policy</code>):</p>
+<figure class="code"><figcaption>JSON</figcaption><pre><code>{
+  <span class="k">"Version"</span>: <span class="s">"2012-10-17"</span>,
+  <span class="k">"Statement"</span>: [
+    {
+      <span class="k">"Sid"</span>: <span class="s">"ListSagePrefixOnly"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>, <span class="k">"Action"</span>: <span class="s">"s3:ListBucket"</span>,
+      <span class="k">"Resource"</span>: "arn:aws:s3:::&lt;S3_BUCKET&gt;",
+      <span class="k">"Condition"</span>: {<span class="k">"StringLike"</span>: {<span class="k">"s3:prefix"</span>: [<span class="s">"sage/"</span>, <span class="s">"sage/*"</span>]}}
+    },
+    {
+      <span class="k">"Sid"</span>: <span class="s">"ReadWriteSageObjects"</span>, <span class="k">"Effect"</span>: <span class="s">"Allow"</span>,
+      <span class="k">"Action"</span>: [<span class="s">"s3:GetObject"</span>, <span class="s">"s3:PutObject"</span>, <span class="s">"s3:AbortMultipartUpload"</span>, <span class="s">"s3:ListMultipartUploadParts"</span>],
+      <span class="k">"Resource"</span>: "arn:aws:s3:::&lt;S3_BUCKET&gt;/sage/*"
+    }
+  ]
+}</code></pre></figure>
+<footer>SAGE 5.0 on Amazon ECS: Roles and Resources to Create · Version 3.0 · 15 October 2026 · Contains placeholders only; no credentials or secret values.</footer>
+</div>
+
+</body></html>
