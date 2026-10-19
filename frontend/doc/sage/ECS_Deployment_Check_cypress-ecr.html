@@ -71,36 +71,40 @@ footer{margin-top:50px;color:var(--muted);font-size:13px;border-top:1px solid va
 <header class="title">
   <span class="status">Troubleshooting guide</span>
   <h1>Check ECS Deployment: cypress-ecr</h1>
-  <p class="sub">AWS CloudShell steps to confirm the cypress-ecr service is running, and to find out why the Application URL doesn't open in the browser after moving from the default VPC to the company VPC</p>
-  <dl><dt>Version</dt><dd>Version 1.0 · 19 October 2026</dd><dt>Audience</dt><dd>Application team, IT / Cloud team</dd></dl>
+  <p class="sub">Confirm the cypress-ecr service is running, find out why the Application URL doesn't open after moving from the default VPC to the company VPC, and test it from AWS CloudShell or your own PC</p>
+  <dl><dt>Version</dt><dd>Version 2.0 · 19 October 2026</dd><dt>Audience</dt><dd>Application team, IT / Cloud team, IT network team</dd></dl>
 </header>
 
-<h2 id="why-the-url-stopped-working">Why the URL stopped working</h2>
-<div class="tw"><table><colgroup><col style="width:28.6%"><col style="width:71.4%"></colgroup><thead><tr><th></th><th>What happens</th></tr></thead><tbody><tr><td><strong>Before</strong></td><td>With the <strong>default VPC</strong>, Express Mode put the load balancer in <strong>public</strong> subnets, so it was <strong>internet-facing</strong> and the URL opened from any browser.</td></tr><tr><td><strong>Now</strong></td><td>The only VPC is the company VPC <code>use1-dev-dse_local</code> (<code>vpc-0758ef1be26b0b173</code>). Its subnets are usually <strong>private</strong>, so Express Mode creates an <strong>internal</strong> load balancer. The URL still resolves, but to <strong>private IPs</strong>, reachable only from inside the VPC or from a network connected to it (such as the company VPN).</td></tr></tbody></table></div>
-<p>The steps below confirm whether the application itself is healthy, and whether the load balancer is internal.</p>
-<div class="tw"><table><colgroup><col style="width:28.6%"><col style="width:71.4%"></colgroup><thead><tr><th>Value</th><th>From the screenshots</th></tr></thead><tbody><tr><td>Account</td><td>DSE.DEV <code>137474890109</code>, region <code>us-east-1</code></td></tr><tr><td>ECS cluster / service</td><td><code>Cypress-ecs-cluster</code> / <code>cypress-ecr</code> (Express Mode)</td></tr><tr><td>Application URL</td><td><code>https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws</code></td></tr><tr><td>VPC</td><td><code>use1-dev-dse_local</code> · <code>vpc-0758ef1be26b0b173</code></td></tr></tbody></table></div>
-<h2 id="step-0-open-cloudshell-and-set-the-names">Step 0 — Open CloudShell and set the names</h2>
-<ol><li>In the AWS Console (account DSE.DEV, region <strong>US East (N. Virginia)</strong>), click the <strong>CloudShell</strong> icon <code>&gt;_</code> in the top bar.</li><li>Paste the lines below. <strong>Nothing is printed. That's normal</strong>, because these lines only set variables.</li><li>Run the <code>echo</code> line to confirm all three values are filled in.</li></ol>
+<h2 id="1-summary">1. Summary</h2>
+<div class="tw"><table><colgroup><col style="width:28.6%"><col style="width:71.4%"></colgroup><thead><tr><th></th><th>What happens</th></tr></thead><tbody><tr><td><strong>Before</strong></td><td>With the <strong>default VPC</strong>, Express Mode placed the load balancer in <strong>public</strong> subnets. It was <strong>internet-facing</strong>, so the URL opened from any browser.</td></tr><tr><td><strong>Now</strong></td><td>The only VPC is the company VPC <code>use1-dev-dse_local</code> (<code>vpc-0758ef1be26b0b173</code>). Its subnets are normally <strong>private</strong>, so the load balancer is most likely <strong>internal</strong>. The URL resolves to <strong>private IPs</strong>, reachable only from inside the VPC or a network connected to it (company VPN / Direct Connect).</td></tr></tbody></table></div>
+<div class="tw"><table><colgroup><col style="width:28.6%"><col style="width:71.4%"></colgroup><thead><tr><th>Value</th><th></th></tr></thead><tbody><tr><td>Account / region</td><td>DSE.DEV <code>137474890109</code> / <code>us-east-1</code></td></tr><tr><td>ECS cluster / service</td><td><code>Cypress-ecs-cluster</code> / <code>cypress-ecr</code> (Express Mode)</td></tr><tr><td>Application URL</td><td><code>https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws</code></td></tr><tr><td>Target group</td><td><code>ecs-gateway-tg-1942207ca280a78ea</code></td></tr><tr><td>VPC / task subnet</td><td><code>vpc-0758ef1be26b0b173</code> / <code>subnet-0778134c5dd79d94f</code></td></tr></tbody></table></div>
+<h3 id="1-1-already-confirmed-cloudshell-output-19-oct">1.1 Already confirmed (CloudShell output, 19 Oct)</h3>
+<div class="tw"><table><colgroup><col style="width:20.0%"><col style="width:40.0%"><col style="width:40.0%"></colgroup><thead><tr><th>Check</th><th>Result</th><th>Meaning</th></tr></thead><tbody><tr><td>Service</td><td><code>ACTIVE</code>, running 1 / desired 1; events *&quot;has reached a steady state&quot;*, *&quot;deployment completed&quot;*</td><td>✅ Deployment succeeded</td></tr><tr><td>Load balancer registration</td><td>Event *&quot;registered 1 targets in target-group ecs-gateway-tg-1942207ca280a78ea&quot;*</td><td>✅ ECS attached the task to the load balancer</td></tr><tr><td>Task</td><td><code>RUNNING</code>, private IP <code>10.67.5.66</code>, subnet <code>subnet-0778134c5dd79d94f</code></td><td>✅ Container is up, inside the company VPC (10.67.x is a private range)</td></tr><tr><td>Task <code>health: UNKNOWN</code></td><td>No container health check defined</td><td>Normal. The load balancer checks health instead (Step 3)</td></tr><tr><td><code>Target group: None</code></td><td>Express Mode doesn't list the target group on the service</td><td>Expected. Use the target group <strong>name</strong> (Step 3)</td></tr></tbody></table></div>
+<p><strong>Still to confirm:</strong> target health (Step 3), whether the load balancer is internal (Step 4), and whether the subnet is private (Step 5).</p>
+<h2 id="2-checks-in-aws-cloudshell">2. Checks in AWS CloudShell</h2>
+<p>AWS Console (DSE.DEV, region <strong>US East (N. Virginia)</strong>) → click the CloudShell icon <code>&gt;_</code> in the top bar.</p>
+<h4>Step 0 — Set the names</h4>
+<p>Nothing is printed when you set variables; that's normal. Run the <code>echo</code> line to confirm all values are filled. Run this again after CloudShell restarts.</p>
 <figure class="code"><figcaption>BASH</figcaption><pre><code>export AWS_REGION=us-east-1
 CLUSTER=Cypress-ecs-cluster
 SERVICE=cypress-ecr
 APP_HOST=cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws
+TG_NAME=ecs-gateway-tg-1942207ca280a78ea
 
-echo &quot;cluster=$CLUSTER service=$SERVICE host=$APP_HOST&quot;</code></pre></figure>
-<div class="note warn"><strong>Spell the variable names exactly</strong><p>If you type <code>SEVICE=</code> instead of <code>SERVICE=</code>, then <code>$SERVICE</code> stays empty and every later command fails. <code>APP_HOST</code> must <strong>not</strong> include <code>https://</code> or a trailing <code>/</code>. Variables disappear when CloudShell restarts, so run Step 0 again after a restart.</p></div>
-<h2 id="steps-1-4-run-all-checks-at-once">Steps 1–4 — Run all checks at once</h2>
-<p>Paste the whole block into CloudShell. Each section prints a heading followed by its result.</p>
+echo &quot;cluster=$CLUSTER service=$SERVICE host=$APP_HOST tg=$TG_NAME&quot;</code></pre></figure>
+<div class="note warn"><strong>Spell the variable names exactly</strong><p>A typo such as <code>SEVICE=</code> leaves <code>$SERVICE</code> empty, and every command fails. <code>APP_HOST</code> must not include <code>https://</code> or a trailing <code>/</code>.</p></div>
+<h4>Steps 1–5 — Run all checks (paste the whole block)</h4>
 <figure class="code"><figcaption>BASH</figcaption><pre><code>echo &quot;===== 1. SERVICE =====&quot;
 aws ecs describe-services --cluster $CLUSTER --services $SERVICE \
-  --query &quot;services[0].{status:status,running:runningCount,desired:desiredCount,subnets:networkConfiguration.awsvpcConfiguration.subnets,publicIp:networkConfiguration.awsvpcConfiguration.assignPublicIp,lastEvents:events[0:3].message}&quot;
+  --query &quot;services[0].{status:status,running:runningCount,desired:desiredCount,lastEvents:events[0:3].message}&quot;
 
 echo &quot;===== 2. TASK =====&quot;
 TASK=$(aws ecs list-tasks --cluster $CLUSTER --service-name $SERVICE --query &quot;taskArns[0]&quot; --output text)
 aws ecs describe-tasks --cluster $CLUSTER --tasks $TASK \
-  --query &quot;tasks[0].{status:lastStatus,health:healthStatus,stoppedReason:stoppedReason,network:attachments[0].details}&quot;
+  --query &quot;tasks[0].{status:lastStatus,stoppedReason:stoppedReason,network:attachments[0].details}&quot;
 
 echo &quot;===== 3. TARGET HEALTH =====&quot;
-TG=$(aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query &quot;services[0].loadBalancers[0].targetGroupArn&quot; --output text)
+TG=$(aws elbv2 describe-target-groups --names $TG_NAME --query &quot;TargetGroups[0].TargetGroupArn&quot; --output text)
 echo &quot;Target group: $TG&quot;
 aws elbv2 describe-target-health --target-group-arn $TG \
   --query &quot;TargetHealthDescriptions[].{ip:Target.Id,port:Target.Port,state:TargetHealth.State,reason:TargetHealth.Reason}&quot; --output table
@@ -108,50 +112,89 @@ aws elbv2 describe-target-health --target-group-arn $TG \
 echo &quot;===== 4. LOAD BALANCER =====&quot;
 ALB=$(aws elbv2 describe-target-groups --target-group-arns $TG --query &quot;TargetGroups[0].LoadBalancerArns[0]&quot; --output text)
 aws elbv2 describe-load-balancers --load-balancer-arns $ALB \
-  --query &quot;LoadBalancers[0].{scheme:Scheme,state:State.Code,dns:DNSName,subnets:AvailabilityZones[].SubnetId,securityGroups:SecurityGroups}&quot;</code></pre></figure>
-<h4>What each section should show</h4>
-<div class="tw"><table><colgroup><col style="width:20.0%"><col style="width:40.0%"><col style="width:40.0%"></colgroup><thead><tr><th>Section</th><th>Good result</th><th>If not</th></tr></thead><tbody><tr><td>1. Service</td><td><code>status: ACTIVE</code>, <code>running</code> = <code>desired</code>, events say *&quot;has reached a steady state&quot;*</td><td>Read <code>lastEvents</code> for the reason</td></tr><tr><td>2. Task</td><td><code>status: RUNNING</code>; <code>network</code> shows a private IP and subnet</td><td><code>stoppedReason</code> explains why the task stopped</td></tr><tr><td>3. Target health</td><td><code>state: healthy</code></td><td><code>unhealthy</code> → app or health-check problem; see Step 6</td></tr><tr><td>4. Load balancer</td><td><code>scheme</code> tells you who can reach the URL</td><td><code>internal</code> → only from inside the VPC or connected network (most likely cause)</td></tr></tbody></table></div>
-<div class="note info"><strong>If Step 3 prints &quot;Target group: None&quot;</strong><p>Express Mode may not list the target group on the service. Run the command below to list all target groups, copy the ARN for cypress-ecr into <code>TG=…</code>, then re-run the Step 3 and Step 4 commands.</p></div>
-<figure class="code"><figcaption>BASH</figcaption><pre><code>aws elbv2 describe-target-groups \
-  --query &quot;TargetGroups[].{name:TargetGroupName,port:Port,arn:TargetGroupArn,lb:LoadBalancerArns[0]}&quot; --output table
+  --query &quot;LoadBalancers[0].{scheme:Scheme,state:State.Code,dns:DNSName,subnets:AvailabilityZones[].SubnetId,securityGroups:SecurityGroups}&quot;
 
-TG=&lt;paste the target group ARN here&gt;</code></pre></figure>
-<h2 id="step-5-network-checks">Step 5 — Network checks</h2>
-<h4>5.1 Are the load balancer subnets public or private?</h4>
-<p>Use the two subnet IDs printed in Step 4:</p>
-<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ec2 describe-route-tables --filters Name=association.subnet-id,Values=&lt;subnet-1&gt;,&lt;subnet-2&gt; \
+echo &quot;===== 5. SUBNET ROUTE (task subnet) =====&quot;
+aws ec2 describe-route-tables --filters Name=association.subnet-id,Values=subnet-0778134c5dd79d94f \
   --query &quot;RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].[GatewayId,NatGatewayId,TransitGatewayId]&quot; --output text
-
-# If that prints nothing, the subnets use the VPC's main route table:
+echo &quot;(blank = subnet uses the main route table:)&quot;
 aws ec2 describe-route-tables --filters Name=vpc-id,Values=vpc-0758ef1be26b0b173 Name=association.main,Values=true \
   --query &quot;RouteTables[].Routes[?DestinationCidrBlock=='0.0.0.0/0'].[GatewayId,NatGatewayId,TransitGatewayId]&quot; --output text</code></pre></figure>
-<p><code>igw-…</code> = <strong>public</strong> subnet (internet gateway). <code>nat-…</code> or <code>tgw-…</code> = <strong>private</strong> subnet.</p>
-<h4>5.2 What does the load balancer's security group allow?</h4>
-<p>Use the security group ID printed in Step 4:</p>
-<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ec2 describe-security-groups --group-ids &lt;sg-id&gt; \
+<div class="tw"><table><colgroup><col style="width:20.0%"><col style="width:40.0%"><col style="width:40.0%"></colgroup><thead><tr><th>Step</th><th>Good result</th><th>If not</th></tr></thead><tbody><tr><td>3. Target health</td><td><code>10.67.5.66</code> → <code>healthy</code></td><td><code>unhealthy</code> → app / health path problem: see Step 7 (logs)</td></tr><tr><td>4. Load balancer</td><td><code>scheme</code> shows who can reach the URL</td><td><code>internal</code> → only from inside the VPC or a connected network</td></tr><tr><td>5. Subnet route</td><td><code>igw-…</code> = public subnet</td><td><code>nat-…</code> / <code>tgw-…</code> = private subnet</td></tr></tbody></table></div>
+<h4>Step 6 — Load balancer security group (who may connect)</h4>
+<p>Use the security group ID printed in Step 4. The rules must allow <strong>443</strong> from the network you browse from (e.g. the corporate / VPN CIDR).</p>
+<figure class="code"><figcaption>BASH</figcaption><pre><code>aws ec2 describe-security-groups --group-ids &lt;sg-id-from-step-4&gt; \
   --query &quot;SecurityGroups[].IpPermissions[].{port:FromPort,cidrs:IpRanges[].CidrIp,fromSG:UserIdGroupPairs[].GroupId}&quot;</code></pre></figure>
-<h4>5.3 What does the URL resolve to from your PC?</h4>
-<p>Run this on <strong>your own PC</strong> (Command Prompt or PowerShell), not in CloudShell:</p>
-<figure class="code"><figcaption>TEXT</figcaption><pre><code>nslookup cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws</code></pre></figure>
-<p>Private addresses (<code>10.x</code>, <code>172.16–31.x</code>, <code>192.168.x</code>) confirm the load balancer is <strong>internal</strong>.</p>
-<h2 id="step-6-application-logs">Step 6 — Application logs</h2>
-<p>The GitHub summary said the log group could not be found automatically, so read it from the task definition:</p>
+<h4>Step 7 — Application logs</h4>
 <figure class="code"><figcaption>BASH</figcaption><pre><code>TD=$(aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query &quot;services[0].taskDefinition&quot; --output text)
 LOG_GROUP=$(aws ecs describe-task-definition --task-definition $TD \
   --query &quot;taskDefinition.containerDefinitions[0].logConfiguration.options.\&quot;awslogs-group\&quot;&quot; --output text)
 echo &quot;Log group: $LOG_GROUP&quot;
 aws logs tail &quot;$LOG_GROUP&quot; --since 30m</code></pre></figure>
 <p>Console alternative: <strong>ECS → Clusters → Cypress-ecs-cluster → Express services → cypress-ecr → Logs</strong> tab.</p>
-<h2 id="step-7-prove-the-app-answers-from-inside-the-vpc">Step 7 — Prove the app answers from inside the VPC</h2>
-<p>This is the definitive test, and it doesn't need a VPN:</p>
-<ol><li>In CloudShell: <strong>Actions → Create VPC environment</strong>.</li><li>Name: <code>vpc-check</code>. VPC: <code>vpc-0758ef1be26b0b173</code>. Subnet: one of the subnets from Step 4. Security group: one that allows <strong>outbound HTTPS 443</strong> → <strong>Create</strong>.</li><li>In the new VPC tab, run the command below.</li></ol>
+<h4>Step 8 — Call the app from inside the VPC (definitive test)</h4>
+<ol><li>CloudShell → <strong>Actions → Create VPC environment</strong>.</li><li>Name <code>vpc-check</code>, VPC <code>vpc-0758ef1be26b0b173</code>, subnet <code>subnet-0778134c5dd79d94f</code>, a security group that allows <strong>outbound HTTPS 443</strong> → <strong>Create</strong>.</li><li>In the new VPC tab run the command below. <strong><code>HTTP 200</code></strong> = the application works; only browser access from your network is missing.</li><li>Delete the VPC environment afterwards (<strong>Actions → Delete</strong>).</li></ol>
 <figure class="code"><figcaption>BASH</figcaption><pre><code>curl -s -o /dev/null -w &quot;HTTP %{http_code}\n&quot; https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws/api/health</code></pre></figure>
-<p><strong><code>HTTP 200</code></strong> = the application is deployed and working. Only browser access from your network is missing. Delete the VPC environment afterwards (<strong>Actions → Delete</strong>).</p>
-<h2 id="reading-the-results">Reading the results</h2>
-<div class="tw"><table><colgroup><col style="width:33.3%"><col style="width:25.0%"><col style="width:41.7%"></colgroup><thead><tr><th>What you see</th><th>Meaning</th><th>Next step</th></tr></thead><tbody><tr><td>Service running, target <strong>healthy</strong>, scheme <strong><code>internal</code></strong>, Step 7 returns <strong>200</strong></td><td><strong>App is fine.</strong> It is private by design in the company VPC</td><td>Ask the network team whether <code>use1-dev-dse_local</code> is reachable over the company VPN or network. <strong>If yes:</strong> the load balancer security group must allow the corporate CIDR on 443, and you open the URL while on VPN. <strong>If no:</strong> they must provide approved public access (public subnets, or a company-managed public load balancer / CloudFront / WAF)</td></tr><tr><td>Scheme <strong><code>internet-facing</code></strong>, but subnets route via <code>nat-…</code> / <code>tgw-…</code></td><td>Load balancer sits in private subnets, so the internet can't reach it</td><td>Use <strong>public</strong> subnets (route <code>igw-…</code>) for the load balancer, if company policy allows</td></tr><tr><td>Scheme <code>internet-facing</code>, public subnets, but the browser still times out</td><td>Security group or company firewall blocks you</td><td>Check Step 5.2 allows 443 from your IP range</td></tr><tr><td>Target <strong>unhealthy</strong></td><td>App or health-check problem</td><td>Step 6 logs; check the app listens on <code>0.0.0.0</code> on its port and <code>/api/health</code> returns 200</td></tr><tr><td>Task not running, <code>CannotPullContainerError</code></td><td>Private subnets have no outbound route to ECR</td><td>Network team: NAT Gateway or VPC endpoints (ECR, S3, logs)</td></tr></tbody></table></div>
-<h2 id="what-to-send-back">What to send back</h2>
-<p>Paste the output of <strong>Steps 1, 3 and 4</strong> (and the <code>nslookup</code> result). Blank out the account ID if needed. Those outputs are enough to tell which row above applies.</p>
-<footer>Check ECS Deployment: cypress-ecr · Version 1.0 · 19 October 2026 · Contains placeholders only; no credentials or secret values.</footer>
+<h2 id="3-try-it-from-your-own-pc-windows">3. Try it from your own PC (Windows)</h2>
+<h3 id="3-1-test-the-url-from-your-pc-no-aws-tools-needed">3.1 Test the URL from your PC (no AWS tools needed)</h3>
+<p>Open <strong>PowerShell</strong> on your PC. Run once with the company VPN <strong>connected</strong>, and once <strong>disconnected</strong>.</p>
+<figure class="code"><figcaption>POWERSHELL</figcaption><pre><code># 1. What does the name resolve to?  10.x / 172.16-31.x / 192.168.x = private (internal load balancer)
+Resolve-DnsName cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws
+
+# 2. Can your PC open a connection to it on 443?  TcpTestSucceeded : True = network path OK
+Test-NetConnection cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws -Port 443
+
+# 3. Call the health endpoint  (curl.exe is built into Windows 10/11)
+curl.exe -s -o NUL -w &quot;HTTP %{http_code}\n&quot; https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws/api/health</code></pre></figure>
+<div class="tw"><table><colgroup><col style="width:44.4%"><col style="width:55.6%"></colgroup><thead><tr><th>Result on your PC</th><th>Meaning</th></tr></thead><tbody><tr><td>DNS = private IP, <code>TcpTestSucceeded : False</code></td><td>Internal load balancer and your network has no route to the VPC → ask the network team (section 4)</td></tr><tr><td>DNS = private IP, TCP <strong>True</strong> on VPN, <code>HTTP 200</code></td><td>Works over VPN → open the URL in the browser while on VPN</td></tr><tr><td>DNS = private IP, TCP True on VPN, but timeout / no HTTP</td><td>Route exists, but the load balancer security group doesn't allow your VPN CIDR on 443 (Step 6)</td></tr><tr><td>DNS = public IP, TCP False</td><td>Internet-facing load balancer, but blocked by its security group or the company proxy/firewall</td></tr></tbody></table></div>
+<h3 id="3-2-run-the-aws-cli-checks-from-your-pc">3.2 Run the AWS CLI checks from your PC</h3>
+<p>Same checks as CloudShell, but from PowerShell on your PC. You sign in with your company AWS SSO (the same identity you use for the console).</p>
+<ol><li>Install <strong>AWS CLI v2</strong> for Windows (MSI from the AWS documentation page *Installing the AWS CLI*), then open a new PowerShell and run <code>aws --version</code>.</li><li>Run <code>aws configure sso</code> and answer: SSO session name <code>rnt</code>; SSO start URL = your company AWS access portal URL (the page where you pick the DSE.DEV account); SSO region <code>us-east-1</code>; registration scopes: press Enter. A browser opens to approve.</li><li>Choose account <strong>DSE.DEV (137474890109)</strong> and your role. Default region <code>us-east-1</code>, output <code>json</code>, profile name <strong><code>dse-dev</code></strong>.</li><li>Next time, sign in with <code>aws sso login --profile dse-dev</code> (sessions expire after some hours).</li></ol>
+<figure class="code"><figcaption>POWERSHELL</figcaption><pre><code>$env:AWS_PROFILE = &quot;dse-dev&quot;
+$env:AWS_REGION  = &quot;us-east-1&quot;
+$CLUSTER = &quot;Cypress-ecs-cluster&quot;
+$SERVICE = &quot;cypress-ecr&quot;
+$TG_NAME = &quot;ecs-gateway-tg-1942207ca280a78ea&quot;
+
+aws sts get-caller-identity          # must show account 137474890109
+
+# 1. Service
+aws ecs describe-services --cluster $CLUSTER --services $SERVICE --query &quot;services[0].{status:status,running:runningCount,desired:desiredCount,lastEvents:events[0:3].message}&quot;
+
+# 3. Target health
+$TG = aws elbv2 describe-target-groups --names $TG_NAME --query &quot;TargetGroups[0].TargetGroupArn&quot; --output text
+aws elbv2 describe-target-health --target-group-arn $TG --query &quot;TargetHealthDescriptions[].{ip:Target.Id,state:TargetHealth.State,reason:TargetHealth.Reason}&quot; --output table
+
+# 4. Load balancer scheme (internal / internet-facing)
+$ALB = aws elbv2 describe-target-groups --target-group-arns $TG --query &quot;TargetGroups[0].LoadBalancerArns[0]&quot; --output text
+aws elbv2 describe-load-balancers --load-balancer-arns $ALB --query &quot;LoadBalancers[0].{scheme:Scheme,dns:DNSName,securityGroups:SecurityGroups}&quot;
+
+# 7. Logs (last 30 minutes) - replace with the log group name from CloudShell Step 7
+aws logs tail &quot;&lt;log-group-name&gt;&quot; --since 30m</code></pre></figure>
+<h3 id="3-3-open-the-private-app-in-your-browser-without-vpn-optional-needs-it">3.3 Open the private app in your browser without VPN (optional, needs IT)</h3>
+<p>If the load balancer is internal and your PC has no route to the VPC, you can tunnel through <strong>AWS Systems Manager (SSM)</strong>. This needs a small EC2 instance in <code>vpc-0758ef1be26b0b173</code> that is managed by SSM (IT usually has one, or creates it). No inbound ports or public IP are needed.</p>
+<ol><li>Install the <strong>Session Manager plugin for the AWS CLI</strong> on your PC (MSI from the AWS documentation page *Install the Session Manager plugin*).</li><li>Ask IT for the instance ID of an SSM-managed EC2 instance in the VPC, and for permission <code>ssm:StartSession</code> on it with document <code>AWS-StartPortForwardingSessionToRemoteHost</code>.</li><li>Start the tunnel (keep this window open). It listens on your PC's port <strong>443</strong>, so the real host name works unchanged. If port 443 is already used on your PC (e.g. IIS or a local web server), stop that first:</li></ol>
+<figure class="code"><figcaption>POWERSHELL</figcaption><pre><code>aws ssm start-session --profile dse-dev --target &lt;instance-id&gt; --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters &quot;host=cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws,portNumber=443,localPortNumber=443&quot;</code></pre></figure>
+<p>In a <strong>second</strong> PowerShell window, test through the tunnel. <code>--resolve</code> sends the real host name, which the load balancer needs to route to this service:</p>
+<figure class="code"><figcaption>POWERSHELL</figcaption><pre><code>curl.exe -s -w &quot;\nHTTP %{http_code}\n&quot; --resolve cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws:443:127.0.0.1 https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws/api/health</code></pre></figure>
+<p>To use a <strong>browser</strong> through the tunnel, the host name must point to your PC. This needs local administrator rights:</p>
+<ul><li>Add the line <code>127.0.0.1 cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws</code> to <code>C:\Windows\System32\drivers\etc\hosts</code> (open Notepad as administrator).</li><li>Then browse to <code>https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws/</code> (the normal URL, no port) while the tunnel is open. Remove the hosts line when you're done.</li></ul>
+<div class="note info"><strong>Why not just browse to https://localhost?</strong><p>Express Mode shares one load balancer between services and picks the service by <strong>host name</strong>. A request for <code>localhost</code> doesn't match any rule, so it fails (404 / certificate error). The <code>--resolve</code> option or the hosts-file line keeps the real host name.</p></div>
+<h2 id="4-reading-the-results-and-next-steps">4. Reading the results and next steps</h2>
+<div class="tw"><table><colgroup><col style="width:33.3%"><col style="width:25.0%"><col style="width:41.7%"></colgroup><thead><tr><th>What you see</th><th>Meaning</th><th>Next step</th></tr></thead><tbody><tr><td>Target <strong>healthy</strong>, scheme <strong><code>internal</code></strong>, Step 8 returns <strong>200</strong></td><td><strong>App is fine.</strong> It is private by design in the company VPC</td><td>Ask the network team whether <code>use1-dev-dse_local</code> (10.67.x) is reachable over the company VPN. <strong>If yes:</strong> allow the corporate/VPN CIDR on 443 in the load balancer security group, and browse while on VPN. <strong>If no:</strong> request an approved public entry (public subnets, or a company-managed public load balancer / CloudFront / WAF), or use the SSM tunnel (3.3) for testing</td></tr><tr><td>Scheme <strong><code>internet-facing</code></strong>, but subnets route via <code>nat-…</code> / <code>tgw-…</code></td><td>Load balancer sits in private subnets, so the internet can't reach it</td><td>Use public subnets (route <code>igw-…</code>) for the load balancer, if company policy allows</td></tr><tr><td>Scheme <code>internet-facing</code>, public subnets, browser still times out</td><td>Security group or company proxy/firewall blocks you</td><td>Step 6: allow 443 from your IP range; check the company proxy</td></tr><tr><td>Target <strong>unhealthy</strong></td><td>App or health-check problem</td><td>Step 7 logs; app must listen on <code>0.0.0.0</code> and <code>/api/health</code> must return 200</td></tr><tr><td>Task not running, <code>CannotPullContainerError</code></td><td>No outbound route to ECR from the private subnets</td><td>Network team: NAT Gateway or VPC endpoints (ECR, S3, logs)</td></tr></tbody></table></div>
+<h3 id="4-1-message-to-send-to-the-network-team">4.1 Message to send to the network team</h3>
+<figure class="code"><figcaption>TEXT</figcaption><pre><code>Our ECS service cypress-ecr (account 137474890109, us-east-1) runs in VPC use1-dev-dse_local
+(vpc-0758ef1be26b0b173), task subnet subnet-0778134c5dd79d94f (10.67.x). It sits behind an
+internal Application Load Balancer created by ECS Express Mode:
+  https://cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws
+
+1. Is this VPC reachable from the corporate network / VPN? If yes, which CIDR should we allow
+   on port 443 in the load balancer security group?
+2. If not, what is the approved way to expose an internal web app to company users
+   (VPN routing, shared public load balancer, CloudFront/WAF)?</code></pre></figure>
+<h2 id="5-what-to-send-back">5. What to send back</h2>
+<p>Paste the output of <strong>Steps 3, 4 and 5</strong> (CloudShell), plus the <strong>3.1</strong> results from your PC (with and without VPN). Blank out the account ID if needed.</p>
+<footer>Check ECS Deployment: cypress-ecr · Version 2.0 · 19 October 2026 · Contains placeholders only; no credentials or secret values.</footer>
 </div>
 </body>
 </html>
