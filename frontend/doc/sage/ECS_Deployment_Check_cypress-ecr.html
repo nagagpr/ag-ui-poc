@@ -92,7 +92,7 @@ APP_HOST=cy-1c81d1fb1e714e9dbc6f8bbe90a93686.ecs.us-east-1.on.aws
 TG_NAME=ecs-gateway-tg-1942207ca280a78ea
 
 echo &quot;cluster=$CLUSTER service=$SERVICE host=$APP_HOST tg=$TG_NAME&quot;</code></pre></figure>
-<div class="note warn"><strong>Spell the variable names exactly</strong><p>A typo such as <code>SEVICE=</code> leaves <code>$SERVICE</code> empty, and every command fails. <code>APP_HOST</code> must not include <code>https://</code> or a trailing <code>/</code>.</p></div>
+
 <h4>Steps 1–5 — Run all checks (paste the whole block)</h4>
 <figure class="code"><figcaption>BASH</figcaption><pre><code>echo &quot;===== 1. SERVICE =====&quot;
 aws ecs describe-services --cluster $CLUSTER --services $SERVICE \
