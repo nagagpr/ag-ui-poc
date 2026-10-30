@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AG Grid Add Record</title>
+<meta name="description" content="Document 3 of 4: an Add button opens a dialog; Save calls the REST API and the grid shows the new customer.">
+<style>
+:root {
+  --bg: #f6f6f2;
+  --surface: #ffffff;
+  --surface-2: #efefe9;
+  --text: #1c2220;
+  --muted: #5b6560;
+  --border: #dadad2;
+  --accent: #0e6b66;
+  --accent-ink: #ffffff;
+  --accent-soft: #dff0ed;
+  --link: #0a5a86;
+  --ok: #1d7a3e;
+  --ok-soft: #e2f3e7;
+  --warn: #8a5200;
+  --warn-soft: #fcf0d9;
+  --danger: #a12f1e;
+  --danger-soft: #fbe6e2;
+  --info: #1d4e8a;
+  --info-soft: #e5edf8;
+  --code-bg: #1d2322;
+  --code-cap: #283130;
+  --code-cap-text: #b6c2bd;
+  --code-text: #e7ece9;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111413;
+    --surface: #191d1c;
+    --surface-2: #212726;
+    --text: #e5eae7;
+    --muted: #9ea9a4;
+    --border: #323a37;
+    --accent: #52c3ba;
+    --accent-ink: #0a1413;
+    --accent-soft: #163230;
+    --link: #7dc2ee;
+    --ok: #6fd18f;
+    --ok-soft: #14301e;
+    --warn: #f0b45c;
+    --warn-soft: #33270f;
+    --danger: #f28b7b;
+    --danger-soft: #3a1d19;
+    --info: #90b9ee;
+    --info-soft: #162436;
+    --code-bg: #0b0e0d;
+    --code-cap: #151a19;
+    --code-cap-text: #9fb0a9;
+    --code-text: #e2e8e4;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #191d1c;
+  --surface-2: #212726;
+  --text: #e5eae7;
+  --muted: #9ea9a4;
+  --border: #323a37;
+  --accent: #52c3ba;
+  --accent-ink: #0a1413;
+  --accent-soft: #163230;
+  --link: #7dc2ee;
+  --ok: #6fd18f;
+  --ok-soft: #14301e;
+  --warn: #f0b45c;
+  --warn-soft: #33270f;
+  --danger: #f28b7b;
+  --danger-soft: #3a1d19;
+  --info: #90b9ee;
+  --info-soft: #162436;
+  --code-bg: #0b0e0d;
+  --code-cap: #151a19;
+  --code-cap-text: #9fb0a9;
+  --code-text: #e2e8e4;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.62 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--link); }
+h1, h2, h3, h4 { line-height: 1.25; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+strong { font-weight: 650; }
+
+/* ---------- layout ---------- */
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+.toc {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 22px 16px 40px;
+}
+main { padding: 36px 48px 96px; max-width: 940px; width: 100%; }
+@media (max-width: 1200px) { main { padding: 28px 28px 96px; } }
+.topbar { display: none; }
+
+.toc-title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+.toc-sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.progress { margin: 0 0 16px; }
+.progress-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+.progress-bar span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+.progress-text { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.linklike { background: none; border: 0; padding: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline; }
+.toc nav ol { list-style: none; margin: 0; padding: 0; }
+.toc nav > ol > li { margin: 2px 0 8px; }
+.toc nav a { display: flex; gap: 8px; text-decoration: none; color: var(--text); border-radius: 6px; padding: 4px 8px; font-size: 14px; line-height: 1.35; }
+.toc nav a:hover { background: var(--surface-2); }
+.toc nav a.part-link { font-weight: 650; }
+.toc nav ol ol a { color: var(--muted); font-size: 13.5px; padding-left: 14px; }
+.toc nav a .n { font-variant-numeric: tabular-nums; min-width: 2.2em; color: var(--muted); }
+.toc nav a.active { background: var(--accent-soft); color: var(--text); }
+.toc nav a.done .n::after { content: " ✓"; color: var(--ok); }
+.theme-btn {
+  margin-top: 18px; width: 100%; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+}
+
+/* ---------- hero ---------- */
+.hero { margin-bottom: 28px; }
+.eyebrow { color: var(--accent); font-weight: 650; font-size: 14px; letter-spacing: .02em; margin: 0 0 8px; }
+.hero h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 12px; letter-spacing: -.01em; }
+.hero p.lead { font-size: 18px; color: var(--muted); margin: 0 0 16px; max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.meta li { font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 3px 11px; }
+
+/* ---------- parts & steps ---------- */
+.part { margin-top: 56px; scroll-margin-top: 16px; }
+.part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+.part-label { font: 700 13px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); background: var(--accent); padding: 5px 9px; border-radius: 6px; }
+.part-head h2 { margin: 0; font-size: clamp(22px, 3vw, 28px); flex: 1 1 320px; }
+.time { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.part > p.lede { color: var(--muted); font-size: 17px; margin-top: 0; }
+
+.step, .card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; margin: 18px 0; box-shadow: var(--shadow); scroll-margin-top: 16px;
+}
+.step > h3, .card > h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 12px; font-size: 19px; }
+.step-num { font: 650 13px/1 ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--accent-soft); color: var(--accent); padding: 5px 9px; border-radius: 99px; }
+.step-title { flex: 1 1 220px; }
+.done-btn {
+  font: 600 13px/1 system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+  border-radius: 99px; padding: 7px 12px; cursor: pointer; white-space: nowrap;
+}
+.done-btn:hover { border-color: var(--ok); color: var(--ok); }
+.step.is-done { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.step.is-done .step-num { background: var(--ok-soft); color: var(--ok); }
+.step.is-done .done-btn { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.step ol, .step ul, .card ol, .card ul { padding-left: 1.4em; }
+.step li, .card li { margin: 5px 0; }
+.step h4, .card h4 { margin: 20px 0 6px; font-size: 16px; }
+
+/* ---------- inline UI hints ---------- */
+.path {
+  display: inline; font-size: .9em; font-weight: 600; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1px 7px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.ui { font-weight: 650; border-bottom: 2px solid var(--accent-soft); }
+kbd { font: 600 .82em ui-monospace, Consolas, monospace; background: var(--surface); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }
+:not(pre) > code {
+  font: .88em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px; overflow-wrap: break-word;
+}
+
+/* ---------- callouts ---------- */
+.callout { border-left: 4px solid var(--info); background: var(--info-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+.callout .label { display: block; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; color: var(--info); }
+.callout.tip { border-color: var(--ok); background: var(--ok-soft); }
+.callout.tip .label { color: var(--ok); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.check { border-color: var(--accent); background: var(--accent-soft); }
+.callout.check .label { color: var(--accent); }
+.callout.stop { border-color: var(--danger); background: var(--danger-soft); }
+.callout.stop .label { color: var(--danger); }
+
+/* ---------- code ---------- */
+figure.code { margin: 14px 0; border-radius: 10px; overflow: hidden; background: var(--code-bg); border: 1px solid var(--border); }
+figure.code figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px;
+  font: 12.5px ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--code-cap-text); background: var(--code-cap); padding: 4px 6px 4px 14px;
+}
+figure.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-text); font: 13.5px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace; tab-size: 4; }
+.copy-btn {
+  font: 600 12px/1 system-ui, sans-serif; color: var(--code-cap-text); background: transparent; border: 1px solid #3c4745;
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; flex: none;
+}
+.copy-btn:hover { color: #fff; border-color: #6a7a76; }
+.copy-btn.copied { color: #7ee2a0; border-color: #3f8f5c; }
+
+/* ---------- tables ---------- */
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+
+/* ---------- diagrams ---------- */
+.diagram { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 12px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 540px; height: auto; color: var(--muted); }
+.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.d-box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+.d-soft { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+.d-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.d-title { fill: var(--text); font: 650 13.5px system-ui, sans-serif; }
+.d-big { fill: var(--text); font: 700 15px system-ui, sans-serif; }
+.d-text { fill: var(--muted); font: 12px system-ui, sans-serif; }
+.d-mono { fill: var(--muted); font: 11.5px ui-monospace, Consolas, monospace; }
+.d-label { fill: var(--accent); font: 650 12px system-ui, sans-serif; }
+.d-line { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.d-dash { stroke-dasharray: 5 4; }
+
+/* ---------- screenshots & Service Studio illustrations (fixed light colours, like a screenshot) ---------- */
+figure.shot { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 10px; }
+figure.shot svg { display: block; width: 100%; height: auto; border-radius: 8px; background: #ffffff; }
+figure.shot figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+figure.zoomable { cursor: zoom-in; }
+.ann rect { fill: none; stroke: #e0452b; stroke-width: 6; }
+.ann-badge circle { fill: #e0452b; stroke: #ffffff; stroke-width: 4; }
+.ann-badge text { fill: #ffffff; font: 700 32px system-ui, "Segoe UI", sans-serif; text-anchor: middle; }
+.ann-big { fill: #e0452b; font: 700 44px system-ui, "Segoe UI", sans-serif; }
+.ann-mid { fill: #3b4249; font: 32px system-ui, "Segoe UI", sans-serif; }
+.mk-bg { fill: #eef1f4; }
+.mk-panel { fill: #ffffff; stroke: #d3d9df; stroke-width: 1.2; }
+.mk-t { fill: #1f2328; font: 14px system-ui, "Segoe UI", sans-serif; }
+.mk-b { fill: #1f2328; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-m { fill: #6b7580; font: 13px system-ui, "Segoe UI", sans-serif; }
+.mk-s { fill: #6b7580; font: 12px system-ui, "Segoe UI", sans-serif; }
+.mk-blue-t { fill: #2f6fdf; }
+.mk-red-t { fill: #e0452b; font: 600 13px system-ui, "Segoe UI", sans-serif; }
+.mk-tile-on { fill: #fff4f0; stroke: #e0452b; stroke-width: 2; }
+.mk-if { fill: #f3f7fe; stroke: #3d7be0; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-tag { fill: #3d7be0; }
+.mk-tag-gray { fill: #6b7580; }
+.mk-tag-t { fill: #ffffff; font: 600 12px system-ui, "Segoe UI", sans-serif; }
+.mk-btn { fill: #2f6fdf; }
+.mk-btn-t { fill: #ffffff; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-cont { fill: #f7f8fa; stroke: #8e9aa6; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-red { stroke: #e0452b; stroke-width: 2.5; fill: none; }
+.mk-redbox { fill: #ffffff; stroke: #e0452b; stroke-width: 2; }
+.mk-input { fill: #ffffff; stroke: #c3cbd3; stroke-width: 1.2; }
+.mk-sel { fill: #e8f0fd; }
+.mk-num { fill: #e0452b; }
+.mk-num-t { fill: #ffffff; font: 700 13px system-ui, "Segoe UI", sans-serif; }
+ol.legend { list-style: none; padding: 0 !important; margin: 4px 0 18px; display: grid; gap: 6px; }
+ol.legend li { display: flex; gap: 10px; align-items: baseline; margin: 0 !important; }
+.badge {
+  display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: #e0452b; color: #ffffff; font: 700 12px/1 system-ui, sans-serif; transform: translateY(1px);
+}
+.lightbox { position: fixed; inset: 0; z-index: 50; display: none; overflow: auto; background: rgba(10,12,12,.86); padding: 48px 16px 16px; cursor: zoom-out; }
+.lightbox.open { display: block; }
+.lightbox svg { display: block; margin: 0 auto; max-width: none; height: auto; background: #ffffff; border-radius: 8px; }
+.lightbox-close { position: fixed; top: 10px; right: 16px; font: 600 14px system-ui, sans-serif; color: #ffffff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+/* ---------- checklist ---------- */
+.checklist { list-style: none; padding: 0 !important; margin: 0; }
+.checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--border); margin: 0 !important; }
+.checklist li:last-child { border-bottom: 0; }
+.checklist input { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--ok); }
+.checklist label { font-weight: 650; cursor: pointer; }
+.checklist .how { grid-column: 2; color: var(--muted); font-size: 14.5px; }
+.checklist li.ok label { color: var(--ok); }
+.score { font-weight: 650; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); }
+.mini h4 { margin: 0 0 4px !important; }
+.mini p { margin: 0; font-size: 14.5px; color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 8px 18px; margin: 0; }
+dl.glossary dt { font-weight: 650; }
+dl.glossary dd { margin: 0; color: var(--muted); }
+footer { margin-top: 64px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); padding-top: 18px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 1000px) {
+  .layout { display: block; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: 0; z-index: 10;
+    background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px;
+  }
+  .topbar button { font: 600 14px system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  .topbar .mini-progress { font-size: 13px; color: var(--muted); }
+  .toc { position: fixed; inset: 0 auto 0 0; width: min(330px, 88vw); z-index: 30; transform: translateX(-105%); transition: transform .25s; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+  body.toc-open .toc { transform: none; }
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 20; }
+  body.toc-open .scrim { display: block; }
+  main { padding: 20px 16px 72px; }
+  .step, .card { padding: 16px; }
+  dl.glossary { grid-template-columns: 1fr; gap: 2px; }
+  dl.glossary dd { margin-bottom: 10px; }
+}
+@media print {
+  .toc, .topbar, .done-btn, .copy-btn, .scrim { display: none !important; }
+  .layout { display: block; }
+  main { max-width: none; padding: 0; }
+  .step, .card { break-inside: avoid; box-shadow: none; }
+}
+
+.series { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 22px; }
+.series-label { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.series a { font-size: 13px; line-height: 1.3; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
+.series a:hover { border-color: var(--accent); }
+.series a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+:root { --fx-green: #1f9a55; --fx-orange: #e07d10; --fx-blue: #4560e0; --fx-line: #a3adb5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+}
+:root[data-theme="dark"] { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+.flow { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 14px 16px 6px; min-width: 0; }
+.flow figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 14px; }
+.flow-kind { font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.flow-name { font: 650 14.5px/1.3 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
+.flow-sig { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.flow-row { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.flow-row > .flow { flex: 1 1 280px; }
+.flow .fx-list { list-style: none; margin: 0; padding: 0; }
+.flow .fx { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; padding-bottom: 26px; margin: 0; }
+.fx:last-child { padding-bottom: 8px; }
+.fx:not(:last-child)::before { content: ""; position: absolute; left: 16px; top: 36px; bottom: 7px; width: 2px; background: var(--fx-line); }
+.fx:not(:last-child)::after { content: ""; position: absolute; left: 11px; bottom: 1px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--fx-line); }
+.fx-ico { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.fx-svg { width: 30px; height: 30px; display: block; }
+.fx-svg-sm { width: 18px; height: 18px; display: inline-block; vertical-align: -4px; color: var(--fx-green); }
+.fx-start .fx-ico, .fx-end .fx-ico { color: var(--fx-green); }
+.fx-js .fx-ico, .fx-server .fx-ico, .fx-rest .fx-ico, .fx-trigger .fx-ico { color: var(--fx-orange); }
+.fx-assign .fx-ico, .fx-if .fx-ico, .fx-message .fx-ico, .fx-refresh .fx-ico { color: var(--fx-blue); }
+.fx-body { padding-top: 6px; min-width: 0; }
+.fx-name { font-weight: 650; margin-right: 8px; overflow-wrap: anywhere; }
+.fx-type { font-size: 12.5px; color: var(--muted); }
+.fx-note { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.flow .fx-values { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.flow .fx-values li { margin: 0; padding: 0; }
+.fx-branch-note { font-size: 12.5px; }
+.fx-branch-note::before { content: "·"; margin-right: 6px; }
+.fx-values code { white-space: normal; overflow-wrap: anywhere; }
+.fx-branch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.fx-tag { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); }
+.fx-arrow { color: var(--fx-line); }
+.fx-true { position: absolute; left: 24px; bottom: 9px; font-size: 11.5px; font-weight: 650; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button type="button" id="tocOpen" aria-controls="toc" aria-expanded="false">☰ Contents</button>
+  <span class="mini-progress" id="miniProgress">0 steps done</span>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Enlarged picture"><button type="button" class="lightbox-close" id="lightboxClose">Close ✕</button></div>
+
+<div class="layout">
+<aside class="toc" id="toc" aria-label="Contents">
+  <p class="toc-title">AG Grid in OutSystems</p>
+  <p class="toc-sub">Document 3 · Add record</p>
+  <div class="progress">
+    <div class="progress-bar"><span id="progressFill"></span></div>
+    <div class="progress-text"><span id="progressText">0 of 0 steps done</span><button type="button" class="linklike" id="resetProgress">reset</button></div>
+  </div>
+  <nav><ol id="tocList"></ol></nav>
+  <button type="button" class="theme-btn" id="themeBtn">Theme: auto</button>
+</aside>
+
+<main>
+<nav class="series" aria-label="Documents in this series">
+  <span class="series-label">Series</span>
+  <a href="1-AGGrid-OutSystems-POC-Guide.html">1 · Setup</a>
+  <a href="2-AGGrid-OutSystems-RowClick-NoCoreChange.html">2 · Row click</a>
+  <a href="3-AGGrid-OutSystems-Add-Record.html" aria-current="page">3 · Add record</a>
+  <a href="4-AGGrid-OutSystems-Delete-Record.html">4 · Delete record</a>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Document 3 of 4 · Add record · OutSystems 11 Reactive Web · AG Grid Enterprise 36.2.0</p>
+  <h1>Add a customer through a dialog</h1>
+  <p class="lead">An <strong>Add customer</strong> button above the grid opens a dialog. <strong>Save</strong> sends the new customer to the REST API, closes the dialog, and the grid shows the new row. AGGridCore and CustomerPortal's script are not changed.</p>
+  <ul class="meta">
+    <li>Builds on documents 1 and 2</li>
+    <li>AGGridCore unchanged</li>
+    <li>Only CustomerPortal changes</li>
+    <li>≈ 45 min</li>
+  </ul>
+</header>
+
+<div class="callout check">
+  <span class="label">Status</span>
+  <ul>
+    <li><strong>Verified:</strong> the JavaScript nodes <code>BuildNewCustomer</code> and <code>AppendRow</code> were run against the live API and the document 1 core. <code>POST /users</code> answered <code>201</code> with id 11, and the grid showed the new customer, "Rows: 11". A second customer got id 12.</li>
+    <li><strong>Service Studio:</strong> the steps were not clicked through; menu names can differ slightly between versions.</li>
+  </ul>
+</div>
+
+<!-- ===================================================== PART 0 -->
+<section class="part" id="part0" data-short="How it works">
+  <div class="part-head"><span class="part-label">Part 0</span><h2>How it works</h2><span class="time">≈ 5 min</span></div>
+
+  <div class="card" id="s0-1">
+    <h3><span class="step-num">0.1</span><span class="step-title">The flow</span></h3>
+<figure class="code"><figcaption>Add customer, step by step</figcaption><pre><code>"Add customer" button  →  ShowAddDialog = True  →  the dialog (Popup) opens
+"Save" in the dialog   →  is the form valid? (Name is required)
+   →  BuildNewCustomer   JavaScript: the new customer as JSON
+   →  CustomerCreate     server action: POST /users  →  201 and the new id
+   →  AppendRow          JavaScript: the new customer added to RowsJson
+   →  ShowAddDialog = False  →  the dialog closes
+   →  the block receives the new RowsJson and redraws the grid</code></pre></figure>
+    <p>The grid redraws by itself: the block's On Parameters Changed (document 1, step 2.9) runs whenever <code>RowsJson</code> changes.</p>
+  </div>
+
+  <div class="card" id="s0-2">
+    <h3><span class="step-num">0.2</span><span class="step-title">About the test API</span></h3>
+    <p>JSONPlaceholder answers a create with <code>201</code> and a new id (<code>11</code>), but it doesn't store the customer. Reading the list again would therefore not show it. So the screen adds the new row to <code>RowsJson</code> itself (<code>AppendRow</code>).</p>
+    <ul>
+      <li>After a page reload, the original 10 customers are shown again. This is expected with the test API.</li>
+      <li>With an API that stores data, use <span class="ui">Refresh Data</span> instead of <code>AppendRow</code> (step 2.5).</li>
+    </ul>
+  </div>
+
+  <div class="card" id="s0-3">
+    <h3><span class="step-num">0.3</span><span class="step-title">What changes where</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Module</th><th>Change</th></tr>
+      <tr><td><strong>AGGridCore</strong></td><td>None.</td></tr>
+      <tr><td><strong>CustomerPortal</strong></td><td>A REST method <code>CreateUser</code>, a server action <code>CustomerCreate</code>, five variables, a button, a dialog with a form, and three client actions. <code>customerportal-grid.js</code> is not changed.</td></tr>
+      <tr><td><strong>EmployeeDirectory</strong></td><td>None.</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================================================== PART 1 -->
+<section class="part" id="part1" data-short="The API call">
+  <div class="part-head"><span class="part-label">Part 1</span><h2>The API call</h2><span class="time">≈ 15 min</span></div>
+  <p class="lede">In CustomerPortal's <span class="ui">Logic</span> tab. The REST API <code>CustomersAPI</code> comes from document 1 (step 4.3).</p>
+
+  <section class="step" id="s1-1">
+    <h3><span class="step-num">1.1</span><span class="step-title">Add the CreateUser method</span></h3>
+    <ol>
+      <li>Right-click <code>CustomersAPI</code> → <span class="path">Add REST API Method…</span></li>
+      <li>Method <code>POST</code>, URL:</li>
+    </ol>
+<figure class="code"><figcaption>URL</figcaption><pre><code>https://jsonplaceholder.typicode.com/users</code></pre></figure>
+    <ol start="3">
+      <li>On the <span class="ui">Request</span> tab, paste this sample body:</li>
+    </ol>
+<figure class="code"><figcaption>Sample request body</figcaption><pre><code>{"name":"Anita Rao","email":"anita@example.com","address":{"city":"Pune"},"company":{"name":"Rao Exports"}}</code></pre></figure>
+    <ol start="4">
+      <li><span class="ui">Test</span> tab → <span class="ui">Test</span>: the status is <code>201</code>, and the response repeats the body with <code>"id": 11</code>. Click <span class="ui">Copy to Response Body</span>, then <span class="ui">Finish</span>.</li>
+      <li>Rename the new method to <code>CreateUser</code>.</li>
+      <li>Set the <span class="ui">Data Type</span> of its body input parameter and of its output <code>Response</code> to <code>Text</code>. The screen builds the body as JSON text (step 2.4).</li>
+    </ol>
+  </section>
+
+  <section class="step" id="s1-2">
+    <h3><span class="step-num">1.2</span><span class="step-title">Server action CustomerCreate</span></h3>
+    <p>REST methods run on the server, so the screen calls them through a server action.</p>
+    <ol>
+      <li><span class="ui">Logic</span> tab → right-click <span class="ui">Server Actions</span> → <span class="path">Add Server Action</span>. Name it <code>CustomerCreate</code>.</li>
+      <li>Add an input <code>BodyJson</code> (Text) and an output <code>ResponseJson</code> (Text).</li>
+      <li>Flow: drag <code>CreateUser</code> in, with its body = <code>BodyJson</code>, then an Assign: <code>ResponseJson = CreateUser.Response</code>.</li>
+    </ol>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Server action</span><span class="flow-name">CustomerCreate</span><span class="flow-sig">Input: BodyJson (Text) · Output: ResponseJson (Text)</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-rest"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor"/><path d="M10 13.5h11l-3-3M22 18.5H11l3 3" fill="none" style="stroke: var(--surface)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="fx-body"><span class="fx-name">CreateUser</span><span class="fx-type">REST method · CustomersAPI</span><ul class="fx-values"><li><code>body = BodyJson</code></li></ul></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>ResponseJson = CreateUser.Response</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+  </section>
+</section>
+
+<!-- ===================================================== PART 2 -->
+<section class="part" id="part2" data-short="The dialog on the screen">
+  <div class="part-head"><span class="part-label">Part 2</span><h2>The dialog on the screen</h2><span class="time">≈ 25 min</span></div>
+  <p class="lede">Everything below is on the <code>Customers</code> screen.</p>
+
+  <section class="step" id="s2-1">
+    <h3><span class="step-num">2.1</span><span class="step-title">Add the variables</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Local variable</th><th>Data Type</th><th>Default</th><th>Holds</th></tr>
+      <tr><td><code>NewName</code>, <code>NewEmail</code>, <code>NewCity</code>, <code>NewCompany</code></td><td>Text</td><td>—</td><td>What the user types in the dialog</td></tr>
+      <tr><td><code>ShowAddDialog</code></td><td>Boolean</td><td><code>False</code></td><td>Whether the dialog is open</td></tr>
+    </table></div>
+  </section>
+
+  <section class="step" id="s2-2">
+    <h3><span class="step-num">2.2</span><span class="step-title">The Add customer button</span></h3>
+    <ol>
+      <li>Drag a <span class="ui">Button</span> from the toolbox onto the screen, above <code>CustomerGridArea</code>. Set its text to <code>Add customer</code>.</li>
+      <li><span class="ui">On Click</span> → <span class="path">New Client Action</span>, named <code>AddCustomerOnClick</code>, with an Assign: <code>ShowAddDialog = True</code>.</li>
+    </ol>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">AddCustomerOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>ShowAddDialog = True</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+  </section>
+
+  <section class="step" id="s2-3">
+    <h3><span class="step-num">2.3</span><span class="step-title">The dialog with the form</span></h3>
+    <ol>
+      <li>Drag a <span class="ui">Popup</span> from the toolbox onto the screen, below the button. Set <span class="ui">Show Popup</span> = <code>ShowAddDialog</code>. The dialog opens when the variable is <code>True</code> and closes when it is <code>False</code>.</li>
+      <li>Inside the Popup, add a Text <code>Add customer</code> as the title.</li>
+      <li>Below it, drag a <span class="ui">Form</span> and name it <code>AddForm</code>.</li>
+      <li>Inside the Form, add four <span class="ui">Input</span> widgets. Set each one's <span class="ui">Variable</span> and <span class="ui">Prompt</span> as in the tree below. On the first Input, set <span class="ui">Mandatory</span> = <code>Yes</code>.</li>
+      <li>Add two Buttons inside the Form:
+        <ul>
+          <li><code>Save</code>: <span class="ui">On Click</span> → <span class="path">New Client Action</span> <code>SaveCustomerOnClick</code> (step 2.4).</li>
+          <li><code>Cancel</code>: set <span class="ui">Built-in Validations</span> = <code>No</code>, then <span class="ui">On Click</span> → <span class="path">New Client Action</span> <code>CancelAddOnClick</code>, with an Assign: <code>ShowAddDialog = False</code>.</li>
+        </ul>
+      </li>
+    </ol>
+<figure class="code"><figcaption>Customers: widgets after this step</figcaption><pre><code>Customers
+├── Button "Add customer"            On Click → AddCustomerOnClick       ← new
+├── Popup  Show Popup = ShowAddDialog                                    ← new
+│   ├── Text "Add customer"
+│   └── Form AddForm
+│       ├── Input  Variable = NewName     Prompt "Name"   Mandatory = Yes
+│       ├── Input  Variable = NewEmail    Prompt "Email"
+│       ├── Input  Variable = NewCity     Prompt "City"
+│       ├── Input  Variable = NewCompany  Prompt "Company"
+│       ├── Button "Save"     On Click → SaveCustomerOnClick
+│       └── Button "Cancel"   On Click → CancelAddOnClick  (Built-in Validations = No)
+├── Container CustomerGridArea  (document 2)
+│   └── AGGridCoreBlock
+└── Expression "Selected: " + LastSelectionJson</code></pre></figure>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">CancelAddOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>ShowAddDialog = False</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <div class="callout tip"><span class="label">Why Built-in Validations = No on Cancel</span><p>Otherwise clicking Cancel with an empty Name first marks the field as required. Cancel should just close the dialog.</p></div>
+  </section>
+
+  <section class="step" id="s2-4">
+    <h3><span class="step-num">2.4</span><span class="step-title">Save: call the API and refresh the grid</span></h3>
+    <p>Build <code>SaveCustomerOnClick</code> like this:</p>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">SaveCustomerOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-if"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3.5 L28.5 16 L16 28.5 L3.5 16 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg></span><div class="fx-body"><span class="fx-name">If</span><ul class="fx-values"><li><code>AddForm.Valid</code></li></ul><div class="fx-branch"><span class="fx-tag">False</span><span class="fx-arrow">→</span><svg class="fx-svg fx-svg-sm" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg><span>End</span><span class="fx-branch-note">the form marks the empty Name field</span></div></div><span class="fx-true">True</span></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">BuildNewCustomer</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>Name = NewName</code></li><li><code>Email = NewEmail</code></li><li><code>City = NewCity</code></li><li><code>Company = NewCompany</code></li></ul><span class="fx-note">Output: BodyJson (Text)</span></div></li><li class="fx fx-server"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">CustomerCreate</span><span class="fx-type">Run Server Action</span><ul class="fx-values"><li><code>BodyJson = BuildNewCustomer.BodyJson</code></li></ul></div></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">AppendRow</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>RowsJson = RowsJson</code></li><li><code>BodyJson = BuildNewCustomer.BodyJson</code></li><li><code>ResponseJson = CustomerCreate.ResponseJson</code></li></ul><span class="fx-note">Output: NewRowsJson (Text)</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>RowsJson = AppendRow.NewRowsJson</code></li><li><code>ShowAddDialog = False</code></li><li><code>NewName = ""</code></li><li><code>NewEmail = ""</code></li><li><code>NewCity = ""</code></li><li><code>NewCompany = ""</code></li></ul></div></li><li class="fx fx-message"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 6.5h22v14.5H14.5L8.5 26v-5H5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M10 12h12M10 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Message</span><span class="fx-type">Message · Type: Success</span><ul class="fx-values"><li><code>"Customer added."</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <p>Each node's values are shown in the flow. Set them in the node's Properties, after closing its editor for JavaScript nodes.</p>
+    <p><strong>JavaScript node <code>BuildNewCustomer</code></strong>: inputs <code>Name</code>, <code>Email</code>, <code>City</code>, <code>Company</code> (Text); output <code>BodyJson</code> (Text).</p>
+<figure class="code"><figcaption>SaveCustomerOnClick → JavaScript node BuildNewCustomer</figcaption><pre><code>// The request body, in the API's own shape.
+$parameters.BodyJson = JSON.stringify({
+    name: $parameters.Name,
+    email: $parameters.Email,
+    address: { city: $parameters.City },
+    company: { name: $parameters.Company }
+});</code></pre></figure>
+    <p><strong>JavaScript node <code>AppendRow</code></strong>: inputs <code>RowsJson</code>, <code>BodyJson</code>, <code>ResponseJson</code> (Text); output <code>NewRowsJson</code> (Text).</p>
+<figure class="code"><figcaption>SaveCustomerOnClick → JavaScript node AppendRow</figcaption><pre><code>// Adds the new customer to the grid's rows, with the id from the API's answer.
+// If that id is missing or already used, the next free number is used.
+var rows = JSON.parse($parameters.RowsJson || "[]");
+var row = JSON.parse($parameters.BodyJson);
+var answer = {};
+try { answer = JSON.parse($parameters.ResponseJson || "{}"); } catch (error) { answer = {}; }
+var maxId = rows.reduce(function (max, r) { return Math.max(max, Number(r.id) || 0); }, 0);
+var id = Number(answer.id);
+row.id = id &amp;&amp; !rows.some(function (r) { return r.id === id; }) ? id : maxId + 1;
+rows.push(row);
+$parameters.NewRowsJson = JSON.stringify(rows);</code></pre></figure>
+    <div class="callout"><span class="label">Field names</span><p>The body uses the API's field names (<code>name</code>, <code>email</code>, <code>address.city</code>, <code>company.name</code>), which are also the grid's column fields. That is why the new row fills every column.</p></div>
+  </section>
+
+  <section class="step" id="s2-5">
+    <h3><span class="step-num">2.5</span><span class="step-title">With an API that stores data</span></h3>
+    <p>Skip this step for the test API. With a real API that stores the new customer, read the list again instead of adding the row yourself:</p>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · with an API that stores data</span><span class="flow-name">SaveCustomerOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-if"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3.5 L28.5 16 L16 28.5 L3.5 16 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg></span><div class="fx-body"><span class="fx-name">If</span><ul class="fx-values"><li><code>AddForm.Valid</code></li></ul><div class="fx-branch"><span class="fx-tag">False</span><span class="fx-arrow">→</span><svg class="fx-svg fx-svg-sm" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg><span>End</span></div></div><span class="fx-true">True</span></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">BuildNewCustomer</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>Name = NewName</code></li><li><code>Email = NewEmail</code></li><li><code>City = NewCity</code></li><li><code>Company = NewCompany</code></li></ul></div></li><li class="fx fx-server"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">CustomerCreate</span><span class="fx-type">Run Server Action</span><ul class="fx-values"><li><code>BodyJson = BuildNewCustomer.BodyJson</code></li></ul></div></li><li class="fx fx-refresh"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M24.5 11.5A9.5 9.5 0 1 0 25.5 18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M25.5 5.5v6.5H19" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="fx-body"><span class="fx-name">GetCustomersJson</span><span class="fx-type">Refresh Data</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>ShowAddDialog = False</code></li><li><code>NewName = ""</code></li><li><code>NewEmail = ""</code></li><li><code>NewCity = ""</code></li><li><code>NewCompany = ""</code></li></ul></div></li><li class="fx fx-message"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 6.5h22v14.5H14.5L8.5 26v-5H5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M10 12h12M10 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Message</span><span class="fx-type">Message · Type: Success</span><ul class="fx-values"><li><code>"Customer added."</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <p><span class="ui">Refresh Data</span> runs <code>GetCustomersJson</code> again; its On After Fetch (document 1, step 4.5) puts the fresh list in <code>RowsJson</code>, and the grid redraws. <code>AppendRow</code> is then not needed.</p>
+  </section>
+
+  <section class="step" id="s2-6">
+    <h3><span class="step-num">2.6</span><span class="step-title">Publish and verify</span></h3>
+    <ol>
+      <li>TrueChange: no red errors. <span class="ui">1-Click Publish</span> → <span class="ui">Open in Browser</span>.</li>
+    </ol>
+    <div class="callout check"><span class="label">Expected</span>
+      <ul>
+        <li><span class="ui">Add customer</span> opens the dialog.</li>
+        <li><span class="ui">Save</span> with an empty Name keeps the dialog open and marks the field.</li>
+        <li>With the fields filled in, <span class="ui">Save</span> closes the dialog and shows <em>Customer added.</em> The grid shows the new customer with id 11, and the status bar shows "Rows: 11". A second customer gets id 12.</li>
+        <li><span class="ui">Cancel</span> closes the dialog without changes.</li>
+        <li>A click on the new row logs <em>A row was clicked 11</em> (document 2).</li>
+      </ul>
+    </div>
+  </section>
+</section>
+
+<footer>
+  Document 3 of 4 · AG Grid Enterprise 36.2.0 · OutSystems 11 Reactive Web · AGGridCore 1.0.0, unchanged · 29 October 2026
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var STORE_KEY = "aggrid-doc3-add-v1";
+  var THEME_KEY = "aggrid-outsystems-guide-theme";
+
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable: progress is not remembered */ }
+  }
+
+  var state = load(STORE_KEY, { steps: {}, checks: {} });
+  state.steps = state.steps || {};
+  state.checks = state.checks || {};
+
+  /* ---------- theme ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  var themes = ["auto", "light", "dark"];
+  function applyTheme(t) {
+    if (t === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+    themeBtn.textContent = "Theme: " + t;
+  }
+  var theme = load(THEME_KEY, "auto");
+  applyTheme(themes.indexOf(theme) >= 0 ? theme : "auto");
+  themeBtn.addEventListener("click", function () {
+    var current = document.documentElement.getAttribute("data-theme") || "auto";
+    var next = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(next);
+    save(THEME_KEY, next);
+  });
+
+  /* ---------- contents ---------- */
+  var tocList = document.getElementById("tocList");
+  var links = {};
+  document.querySelectorAll("section.part").forEach(function (part) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = "#" + part.id;
+    a.className = "part-link";
+    a.innerHTML = '<span class="n"></span>';
+    a.firstChild.textContent = part.querySelector(".part-label").textContent.replace("Part ", "");
+    a.appendChild(document.createTextNode(part.getAttribute("data-short")));
+    li.appendChild(a);
+    links[part.id] = a;
+
+    var steps = part.querySelectorAll(".step, .card");
+    if (steps.length) {
+      var ol = document.createElement("ol");
+      steps.forEach(function (step) {
+        var sli = document.createElement("li");
+        var sa = document.createElement("a");
+        sa.href = "#" + step.id;
+        var n = document.createElement("span");
+        n.className = "n";
+        n.textContent = step.querySelector(".step-num").textContent;
+        sa.appendChild(n);
+        sa.appendChild(document.createTextNode(step.querySelector(".step-title").textContent));
+        sli.appendChild(sa);
+        ol.appendChild(sli);
+        links[step.id] = sa;
+      });
+      li.appendChild(ol);
+    }
+    tocList.appendChild(li);
+  });
+
+  /* ---------- step progress ---------- */
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+  function renderProgress() {
+    var done = steps.filter(function (s) { return state.steps[s.id]; }).length;
+    var pct = steps.length ? Math.round(done / steps.length * 100) : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressText").textContent = done + " of " + steps.length + " steps done";
+    document.getElementById("miniProgress").textContent = done + " / " + steps.length + " steps done";
+  }
+  steps.forEach(function (step) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "done-btn";
+    function paint() {
+      var isDone = !!state.steps[step.id];
+      step.classList.toggle("is-done", isDone);
+      btn.textContent = isDone ? "✓ Done" : "Mark done";
+      btn.setAttribute("aria-pressed", isDone ? "true" : "false");
+      if (links[step.id]) links[step.id].classList.toggle("done", isDone);
+    }
+    btn.addEventListener("click", function () {
+      state.steps[step.id] = !state.steps[step.id];
+      save(STORE_KEY, state);
+      paint();
+      renderProgress();
+    });
+    step.querySelector("h3").appendChild(btn);
+    paint();
+  });
+  renderProgress();
+
+  /* ---------- checklist ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  function renderChecks() {
+    var ok = 0;
+    boxes.forEach(function (box) {
+      box.checked = !!state.checks[box.id];
+      box.parentNode.classList.toggle("ok", box.checked);
+      if (box.checked) ok++;
+    });
+    var score = document.getElementById("checkScore");
+    if (score) score.textContent = ok + " / " + boxes.length;
+  }
+  boxes.forEach(function (box) {
+    box.addEventListener("change", function () {
+      state.checks[box.id] = box.checked;
+      save(STORE_KEY, state);
+      renderChecks();
+    });
+  });
+  renderChecks();
+
+  document.getElementById("resetProgress").addEventListener("click", function () {
+    if (!window.confirm("Clear all 'done' marks?")) return;
+    save(STORE_KEY, { steps: {}, checks: {} });
+    location.reload();
+  });
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll("figure.code").forEach(function (fig) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var text = fig.querySelector("code").textContent;
+      function done() {
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1600);
+      }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch (e) { btn.textContent = "Select & copy"; }
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+    fig.querySelector("figcaption").appendChild(btn);
+  });
+
+  /* ---------- active section in contents ---------- */
+  var tracked = document.querySelectorAll("section.part, .step, .card");
+  if ("IntersectionObserver" in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && links[e.target.id]) {
+          if (current) current.classList.remove("active");
+          current = links[e.target.id];
+          current.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-10% 0px -80% 0px" });
+    tracked.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- click a picture to see it full size ---------- */
+  var lightbox = document.getElementById("lightbox");
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.querySelectorAll("svg").forEach(function (shown) { lightbox.removeChild(shown); });
+  }
+  document.querySelectorAll("figure.zoomable").forEach(function (fig) {
+    fig.addEventListener("click", function () {
+      closeLightbox();
+      var svg = fig.querySelector("svg").cloneNode(true);
+      var box = svg.viewBox.baseVal;
+      // Screenshots at their real size; illustrations a bit larger than on the page
+      svg.style.width = (box.width > 1200 ? box.width : Math.round(box.width * 1.5)) + "px";
+      svg.querySelectorAll("marker").forEach(function (m) { m.id = m.id + "-zoom"; });
+      svg.querySelectorAll("[marker-end]").forEach(function (p) { p.setAttribute("marker-end", p.getAttribute("marker-end").replace(")", "-zoom)")); });
+      lightbox.appendChild(svg);
+      lightbox.classList.add("open");
+    });
+  });
+  lightbox.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
+
+  /* ---------- mobile contents drawer ---------- */
+  var openBtn = document.getElementById("tocOpen");
+  function setOpen(open) {
+    document.body.classList.toggle("toc-open", open);
+    openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  openBtn.addEventListener("click", function () { setOpen(!document.body.classList.contains("toc-open")); });
+  document.getElementById("scrim").addEventListener("click", function () { setOpen(false); });
+  tocList.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+})();
+</script>
+</body>
+</html>

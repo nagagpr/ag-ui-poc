@@ -1,0 +1,1247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AG Grid Delete Record</title>
+<meta name="description" content="Document 4 of 4: a Delete button on each row asks for confirmation, calls the REST API and removes the customer from the grid.">
+<style>
+:root {
+  --bg: #f6f6f2;
+  --surface: #ffffff;
+  --surface-2: #efefe9;
+  --text: #1c2220;
+  --muted: #5b6560;
+  --border: #dadad2;
+  --accent: #0e6b66;
+  --accent-ink: #ffffff;
+  --accent-soft: #dff0ed;
+  --link: #0a5a86;
+  --ok: #1d7a3e;
+  --ok-soft: #e2f3e7;
+  --warn: #8a5200;
+  --warn-soft: #fcf0d9;
+  --danger: #a12f1e;
+  --danger-soft: #fbe6e2;
+  --info: #1d4e8a;
+  --info-soft: #e5edf8;
+  --code-bg: #1d2322;
+  --code-cap: #283130;
+  --code-cap-text: #b6c2bd;
+  --code-text: #e7ece9;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111413;
+    --surface: #191d1c;
+    --surface-2: #212726;
+    --text: #e5eae7;
+    --muted: #9ea9a4;
+    --border: #323a37;
+    --accent: #52c3ba;
+    --accent-ink: #0a1413;
+    --accent-soft: #163230;
+    --link: #7dc2ee;
+    --ok: #6fd18f;
+    --ok-soft: #14301e;
+    --warn: #f0b45c;
+    --warn-soft: #33270f;
+    --danger: #f28b7b;
+    --danger-soft: #3a1d19;
+    --info: #90b9ee;
+    --info-soft: #162436;
+    --code-bg: #0b0e0d;
+    --code-cap: #151a19;
+    --code-cap-text: #9fb0a9;
+    --code-text: #e2e8e4;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #191d1c;
+  --surface-2: #212726;
+  --text: #e5eae7;
+  --muted: #9ea9a4;
+  --border: #323a37;
+  --accent: #52c3ba;
+  --accent-ink: #0a1413;
+  --accent-soft: #163230;
+  --link: #7dc2ee;
+  --ok: #6fd18f;
+  --ok-soft: #14301e;
+  --warn: #f0b45c;
+  --warn-soft: #33270f;
+  --danger: #f28b7b;
+  --danger-soft: #3a1d19;
+  --info: #90b9ee;
+  --info-soft: #162436;
+  --code-bg: #0b0e0d;
+  --code-cap: #151a19;
+  --code-cap-text: #9fb0a9;
+  --code-text: #e2e8e4;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.62 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--link); }
+h1, h2, h3, h4 { line-height: 1.25; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+strong { font-weight: 650; }
+
+/* ---------- layout ---------- */
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+.toc {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 22px 16px 40px;
+}
+main { padding: 36px 48px 96px; max-width: 940px; width: 100%; }
+@media (max-width: 1200px) { main { padding: 28px 28px 96px; } }
+.topbar { display: none; }
+
+.toc-title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+.toc-sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.progress { margin: 0 0 16px; }
+.progress-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+.progress-bar span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+.progress-text { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.linklike { background: none; border: 0; padding: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline; }
+.toc nav ol { list-style: none; margin: 0; padding: 0; }
+.toc nav > ol > li { margin: 2px 0 8px; }
+.toc nav a { display: flex; gap: 8px; text-decoration: none; color: var(--text); border-radius: 6px; padding: 4px 8px; font-size: 14px; line-height: 1.35; }
+.toc nav a:hover { background: var(--surface-2); }
+.toc nav a.part-link { font-weight: 650; }
+.toc nav ol ol a { color: var(--muted); font-size: 13.5px; padding-left: 14px; }
+.toc nav a .n { font-variant-numeric: tabular-nums; min-width: 2.2em; color: var(--muted); }
+.toc nav a.active { background: var(--accent-soft); color: var(--text); }
+.toc nav a.done .n::after { content: " ✓"; color: var(--ok); }
+.theme-btn {
+  margin-top: 18px; width: 100%; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+}
+
+/* ---------- hero ---------- */
+.hero { margin-bottom: 28px; }
+.eyebrow { color: var(--accent); font-weight: 650; font-size: 14px; letter-spacing: .02em; margin: 0 0 8px; }
+.hero h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 12px; letter-spacing: -.01em; }
+.hero p.lead { font-size: 18px; color: var(--muted); margin: 0 0 16px; max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.meta li { font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 3px 11px; }
+
+/* ---------- parts & steps ---------- */
+.part { margin-top: 56px; scroll-margin-top: 16px; }
+.part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+.part-label { font: 700 13px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); background: var(--accent); padding: 5px 9px; border-radius: 6px; }
+.part-head h2 { margin: 0; font-size: clamp(22px, 3vw, 28px); flex: 1 1 320px; }
+.time { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.part > p.lede { color: var(--muted); font-size: 17px; margin-top: 0; }
+
+.step, .card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; margin: 18px 0; box-shadow: var(--shadow); scroll-margin-top: 16px;
+}
+.step > h3, .card > h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 12px; font-size: 19px; }
+.step-num { font: 650 13px/1 ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--accent-soft); color: var(--accent); padding: 5px 9px; border-radius: 99px; }
+.step-title { flex: 1 1 220px; }
+.done-btn {
+  font: 600 13px/1 system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+  border-radius: 99px; padding: 7px 12px; cursor: pointer; white-space: nowrap;
+}
+.done-btn:hover { border-color: var(--ok); color: var(--ok); }
+.step.is-done { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.step.is-done .step-num { background: var(--ok-soft); color: var(--ok); }
+.step.is-done .done-btn { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.step ol, .step ul, .card ol, .card ul { padding-left: 1.4em; }
+.step li, .card li { margin: 5px 0; }
+.step h4, .card h4 { margin: 20px 0 6px; font-size: 16px; }
+
+/* ---------- inline UI hints ---------- */
+.path {
+  display: inline; font-size: .9em; font-weight: 600; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1px 7px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.ui { font-weight: 650; border-bottom: 2px solid var(--accent-soft); }
+kbd { font: 600 .82em ui-monospace, Consolas, monospace; background: var(--surface); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }
+:not(pre) > code {
+  font: .88em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px; overflow-wrap: break-word;
+}
+
+/* ---------- callouts ---------- */
+.callout { border-left: 4px solid var(--info); background: var(--info-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+.callout .label { display: block; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; color: var(--info); }
+.callout.tip { border-color: var(--ok); background: var(--ok-soft); }
+.callout.tip .label { color: var(--ok); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.check { border-color: var(--accent); background: var(--accent-soft); }
+.callout.check .label { color: var(--accent); }
+.callout.stop { border-color: var(--danger); background: var(--danger-soft); }
+.callout.stop .label { color: var(--danger); }
+
+/* ---------- code ---------- */
+figure.code { margin: 14px 0; border-radius: 10px; overflow: hidden; background: var(--code-bg); border: 1px solid var(--border); }
+figure.code figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px;
+  font: 12.5px ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--code-cap-text); background: var(--code-cap); padding: 4px 6px 4px 14px;
+}
+figure.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-text); font: 13.5px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace; tab-size: 4; }
+.copy-btn {
+  font: 600 12px/1 system-ui, sans-serif; color: var(--code-cap-text); background: transparent; border: 1px solid #3c4745;
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; flex: none;
+}
+.copy-btn:hover { color: #fff; border-color: #6a7a76; }
+.copy-btn.copied { color: #7ee2a0; border-color: #3f8f5c; }
+
+/* ---------- tables ---------- */
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+
+/* ---------- diagrams ---------- */
+.diagram { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 12px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 540px; height: auto; color: var(--muted); }
+.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.d-box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+.d-soft { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+.d-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.d-title { fill: var(--text); font: 650 13.5px system-ui, sans-serif; }
+.d-big { fill: var(--text); font: 700 15px system-ui, sans-serif; }
+.d-text { fill: var(--muted); font: 12px system-ui, sans-serif; }
+.d-mono { fill: var(--muted); font: 11.5px ui-monospace, Consolas, monospace; }
+.d-label { fill: var(--accent); font: 650 12px system-ui, sans-serif; }
+.d-line { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.d-dash { stroke-dasharray: 5 4; }
+
+/* ---------- screenshots & Service Studio illustrations (fixed light colours, like a screenshot) ---------- */
+figure.shot { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 10px; }
+figure.shot svg { display: block; width: 100%; height: auto; border-radius: 8px; background: #ffffff; }
+figure.shot figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+figure.zoomable { cursor: zoom-in; }
+.ann rect { fill: none; stroke: #e0452b; stroke-width: 6; }
+.ann-badge circle { fill: #e0452b; stroke: #ffffff; stroke-width: 4; }
+.ann-badge text { fill: #ffffff; font: 700 32px system-ui, "Segoe UI", sans-serif; text-anchor: middle; }
+.ann-big { fill: #e0452b; font: 700 44px system-ui, "Segoe UI", sans-serif; }
+.ann-mid { fill: #3b4249; font: 32px system-ui, "Segoe UI", sans-serif; }
+.mk-bg { fill: #eef1f4; }
+.mk-panel { fill: #ffffff; stroke: #d3d9df; stroke-width: 1.2; }
+.mk-t { fill: #1f2328; font: 14px system-ui, "Segoe UI", sans-serif; }
+.mk-b { fill: #1f2328; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-m { fill: #6b7580; font: 13px system-ui, "Segoe UI", sans-serif; }
+.mk-s { fill: #6b7580; font: 12px system-ui, "Segoe UI", sans-serif; }
+.mk-blue-t { fill: #2f6fdf; }
+.mk-red-t { fill: #e0452b; font: 600 13px system-ui, "Segoe UI", sans-serif; }
+.mk-tile-on { fill: #fff4f0; stroke: #e0452b; stroke-width: 2; }
+.mk-if { fill: #f3f7fe; stroke: #3d7be0; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-tag { fill: #3d7be0; }
+.mk-tag-gray { fill: #6b7580; }
+.mk-tag-t { fill: #ffffff; font: 600 12px system-ui, "Segoe UI", sans-serif; }
+.mk-btn { fill: #2f6fdf; }
+.mk-btn-t { fill: #ffffff; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-cont { fill: #f7f8fa; stroke: #8e9aa6; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-red { stroke: #e0452b; stroke-width: 2.5; fill: none; }
+.mk-redbox { fill: #ffffff; stroke: #e0452b; stroke-width: 2; }
+.mk-input { fill: #ffffff; stroke: #c3cbd3; stroke-width: 1.2; }
+.mk-sel { fill: #e8f0fd; }
+.mk-num { fill: #e0452b; }
+.mk-num-t { fill: #ffffff; font: 700 13px system-ui, "Segoe UI", sans-serif; }
+ol.legend { list-style: none; padding: 0 !important; margin: 4px 0 18px; display: grid; gap: 6px; }
+ol.legend li { display: flex; gap: 10px; align-items: baseline; margin: 0 !important; }
+.badge {
+  display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: #e0452b; color: #ffffff; font: 700 12px/1 system-ui, sans-serif; transform: translateY(1px);
+}
+.lightbox { position: fixed; inset: 0; z-index: 50; display: none; overflow: auto; background: rgba(10,12,12,.86); padding: 48px 16px 16px; cursor: zoom-out; }
+.lightbox.open { display: block; }
+.lightbox svg { display: block; margin: 0 auto; max-width: none; height: auto; background: #ffffff; border-radius: 8px; }
+.lightbox-close { position: fixed; top: 10px; right: 16px; font: 600 14px system-ui, sans-serif; color: #ffffff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+/* ---------- checklist ---------- */
+.checklist { list-style: none; padding: 0 !important; margin: 0; }
+.checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--border); margin: 0 !important; }
+.checklist li:last-child { border-bottom: 0; }
+.checklist input { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--ok); }
+.checklist label { font-weight: 650; cursor: pointer; }
+.checklist .how { grid-column: 2; color: var(--muted); font-size: 14.5px; }
+.checklist li.ok label { color: var(--ok); }
+.score { font-weight: 650; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); }
+.mini h4 { margin: 0 0 4px !important; }
+.mini p { margin: 0; font-size: 14.5px; color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 8px 18px; margin: 0; }
+dl.glossary dt { font-weight: 650; }
+dl.glossary dd { margin: 0; color: var(--muted); }
+footer { margin-top: 64px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); padding-top: 18px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 1000px) {
+  .layout { display: block; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: 0; z-index: 10;
+    background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px;
+  }
+  .topbar button { font: 600 14px system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  .topbar .mini-progress { font-size: 13px; color: var(--muted); }
+  .toc { position: fixed; inset: 0 auto 0 0; width: min(330px, 88vw); z-index: 30; transform: translateX(-105%); transition: transform .25s; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+  body.toc-open .toc { transform: none; }
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 20; }
+  body.toc-open .scrim { display: block; }
+  main { padding: 20px 16px 72px; }
+  .step, .card { padding: 16px; }
+  dl.glossary { grid-template-columns: 1fr; gap: 2px; }
+  dl.glossary dd { margin-bottom: 10px; }
+}
+@media print {
+  .toc, .topbar, .done-btn, .copy-btn, .scrim { display: none !important; }
+  .layout { display: block; }
+  main { max-width: none; padding: 0; }
+  .step, .card { break-inside: avoid; box-shadow: none; }
+}
+
+.series { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 22px; }
+.series-label { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.series a { font-size: 13px; line-height: 1.3; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
+.series a:hover { border-color: var(--accent); }
+.series a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+:root { --fx-green: #1f9a55; --fx-orange: #e07d10; --fx-blue: #4560e0; --fx-line: #a3adb5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+}
+:root[data-theme="dark"] { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+.flow { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 14px 16px 6px; min-width: 0; }
+.flow figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 14px; }
+.flow-kind { font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.flow-name { font: 650 14.5px/1.3 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
+.flow-sig { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.flow-row { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.flow-row > .flow { flex: 1 1 280px; }
+.flow .fx-list { list-style: none; margin: 0; padding: 0; }
+.flow .fx { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; padding-bottom: 26px; margin: 0; }
+.fx:last-child { padding-bottom: 8px; }
+.fx:not(:last-child)::before { content: ""; position: absolute; left: 16px; top: 36px; bottom: 7px; width: 2px; background: var(--fx-line); }
+.fx:not(:last-child)::after { content: ""; position: absolute; left: 11px; bottom: 1px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--fx-line); }
+.fx-ico { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.fx-svg { width: 30px; height: 30px; display: block; }
+.fx-svg-sm { width: 18px; height: 18px; display: inline-block; vertical-align: -4px; color: var(--fx-green); }
+.fx-start .fx-ico, .fx-end .fx-ico { color: var(--fx-green); }
+.fx-js .fx-ico, .fx-server .fx-ico, .fx-rest .fx-ico, .fx-trigger .fx-ico { color: var(--fx-orange); }
+.fx-assign .fx-ico, .fx-if .fx-ico, .fx-message .fx-ico, .fx-refresh .fx-ico { color: var(--fx-blue); }
+.fx-body { padding-top: 6px; min-width: 0; }
+.fx-name { font-weight: 650; margin-right: 8px; overflow-wrap: anywhere; }
+.fx-type { font-size: 12.5px; color: var(--muted); }
+.fx-note { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.flow .fx-values { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.flow .fx-values li { margin: 0; padding: 0; }
+.fx-branch-note { font-size: 12.5px; }
+.fx-branch-note::before { content: "·"; margin-right: 6px; }
+.fx-values code { white-space: normal; overflow-wrap: anywhere; }
+.fx-branch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.fx-tag { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); }
+.fx-arrow { color: var(--fx-line); }
+.fx-true { position: absolute; left: 24px; bottom: 9px; font-size: 11.5px; font-weight: 650; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button type="button" id="tocOpen" aria-controls="toc" aria-expanded="false">☰ Contents</button>
+  <span class="mini-progress" id="miniProgress">0 steps done</span>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Enlarged picture"><button type="button" class="lightbox-close" id="lightboxClose">Close ✕</button></div>
+
+<div class="layout">
+<aside class="toc" id="toc" aria-label="Contents">
+  <p class="toc-title">AG Grid in OutSystems</p>
+  <p class="toc-sub">Document 4 · Delete record</p>
+  <div class="progress">
+    <div class="progress-bar"><span id="progressFill"></span></div>
+    <div class="progress-text"><span id="progressText">0 of 0 steps done</span><button type="button" class="linklike" id="resetProgress">reset</button></div>
+  </div>
+  <nav><ol id="tocList"></ol></nav>
+  <button type="button" class="theme-btn" id="themeBtn">Theme: auto</button>
+</aside>
+
+<main>
+<nav class="series" aria-label="Documents in this series">
+  <span class="series-label">Series</span>
+  <a href="1-AGGrid-OutSystems-POC-Guide.html">1 · Setup</a>
+  <a href="2-AGGrid-OutSystems-RowClick-NoCoreChange.html">2 · Row click</a>
+  <a href="3-AGGrid-OutSystems-Add-Record.html">3 · Add record</a>
+  <a href="4-AGGrid-OutSystems-Delete-Record.html" aria-current="page">4 · Delete record</a>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Document 4 of 4 · Delete record · OutSystems 11 Reactive Web · AG Grid Enterprise 36.2.0</p>
+  <h1>Delete a customer after a confirmation</h1>
+  <p class="lead">Each row gets a <strong>Delete</strong> button. A click opens a confirmation dialog. <strong>Yes</strong> calls the REST API, removes the customer and refreshes the grid; <strong>No</strong> closes the dialog. AGGridCore is not changed: the button, the click and the dialog belong to CustomerPortal. CustomerPortal's script also becomes generic, so later buttons need only a JSON column, a CSS rule and a handler.</p>
+  <ul class="meta">
+    <li>Builds on documents 1–3</li>
+    <li>AGGridCore unchanged</li>
+    <li>Only CustomerPortal changes</li>
+    <li>≈ 45 min</li>
+  </ul>
+</header>
+
+<div class="callout check">
+  <span class="label">Status</span>
+  <ul>
+    <li><strong>Verified:</strong> CustomerPortal's generic script, its CSS, the test page and the JavaScript nodes were run against the document 1 core and the live API.
+      <ul>
+        <li>Delete on Ervin Howell opens the dialog with his name; the <kbd>Enter</kbd> key on a Delete cell does the same.</li>
+        <li><span class="ui">No</span> keeps the row. <span class="ui">Yes</span> on Clementine Bauch sends <code>DELETE /users/3</code>, which answers <code>200</code>, and the row disappears.</li>
+        <li>A row click still logs and doesn't open the dialog.</li>
+        <li>A second button (View, step 4.2) worked with only a JSON column, a CSS rule and a handler; the script was not changed.</li>
+        <li>A button shown only on some rows (a <code>cellClassRules</code> rule) works where it is shown; where it is hidden, a click does nothing.</li>
+        <li>The CSV export has no button columns.</li>
+      </ul>
+    </li>
+    <li><strong>Service Studio:</strong> the steps were not clicked through; menu names can differ slightly between versions.</li>
+  </ul>
+</div>
+
+<!-- ===================================================== PART 0 -->
+<section class="part" id="part0" data-short="How it works">
+  <div class="part-head"><span class="part-label">Part 0</span><h2>How it works</h2><span class="time">≈ 5 min</span></div>
+
+  <div class="card" id="s0-1">
+    <h3><span class="step-num">0.1</span><span class="step-title">The flow</span></h3>
+<figure class="code"><figcaption>Delete, step by step</figcaption><pre><code>Delete cell in a row        an empty JSON column; CustomerPortal's CSS draws the button
+   →  customerportal-grid.js     buttons["delete"](id, cells)
+   →  AskDelete                  DeleteId = id, DeleteName = cells.name, ShowDeleteDialog = True
+   →  the dialog: "Delete Ervin Howell? This cannot be undone."
+        No   →  ShowDeleteDialog = False
+        Yes  →  ConfirmDeleteOnClick
+                →  CustomerDelete   server action: DELETE /users/{id}  →  200
+                →  RemoveRow        JavaScript: the customer removed from RowsJson
+                →  ShowDeleteDialog = False  →  the grid redraws</code></pre></figure>
+    <p>The confirmation is an OutSystems Popup with <span class="ui">Yes</span> and <span class="ui">No</span>, built like the Add dialog in document 3. The script only reports which row's button was clicked.</p>
+  </div>
+
+  <div class="card" id="s0-2">
+    <h3><span class="step-num">0.2</span><span class="step-title">About the test API</span></h3>
+    <p>JSONPlaceholder answers a delete with <code>200</code> but doesn't remove anything. So the screen removes the row from <code>RowsJson</code> itself (<code>RemoveRow</code>), and a page reload shows all customers again. With an API that stores data, use <span class="ui">Refresh Data</span> instead (step 3.6).</p>
+  </div>
+
+  <div class="card" id="s0-3">
+    <h3><span class="step-num">0.3</span><span class="step-title">What changes where</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Module</th><th>Change</th></tr>
+      <tr><td><strong>AGGridCore</strong></td><td>None.</td></tr>
+      <tr><td><strong>CustomerPortal</strong></td><td>
+        <ul>
+          <li>A REST method <code>DeleteUser</code> and a server action <code>CustomerDelete</code>.</li>
+          <li>A generic <code>customerportal-grid.js</code>, replaced once, and its CSS.</li>
+          <li>A Delete column in BuildConfig.</li>
+          <li>Three variables, a confirmation dialog and three client actions.</li>
+          <li>A Delete handler in the On Ready node.</li>
+        </ul>
+      </td></tr>
+      <tr><td><strong>EmployeeDirectory</strong></td><td>None.</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- ===================================================== PART 1 -->
+<section class="part" id="part1" data-short="Script, CSS and local test">
+  <div class="part-head"><span class="part-label">Part 1</span><h2>Script, CSS and local test</h2><span class="time">≈ 10 min</span></div>
+  <p class="lede">On your PC, in <code>C:\AGGrid\customerportal-scripts</code> from document 2.</p>
+
+  <section class="step" id="s1-1">
+    <h3><span class="step-num">1.1</span><span class="step-title">Make customerportal-grid.js generic</span></h3>
+    <p>Replace the whole file with this version, once. The row click works as before. Any column with a <code>colId</code> and the cell class <code>cp-btn</code> is now a button: a click calls the function with the same <code>colId</code> under <code>buttons</code>. Later buttons need no change to this file (step 4.2).</p>
+<figure class="code"><figcaption>customerportal-grid.js</figcaption><pre><code>/* customerportal-grid.js - CustomerPortal's row click and button columns around the shared AGGridCore grid.
+ *
+ * AGGridCore is used exactly as it is: this file does not call or change it.
+ * It listens to clicks (and Enter) in the area around the grid, finds the row
+ * and the column that were clicked, and calls CustomerPortal's functions.
+ *
+ * Called from an OutSystems JavaScript node (the Customers screen's On Ready):
+ *   CustomerGrid.attach(areaId, {
+ *       onRowClicked: function (id) {},            // a click on a row, not on its checkbox or a button
+ *       buttons: {                                 // one function per button column, keyed by its colId
+ *           "delete": function (id, cells) {},     // cells: the row's visible texts by colId, e.g. cells.name
+ *           "edit":   function (id, cells) {}
+ *       }
+ *   })
+ * A button column is an empty column in ConfigJson with a colId and the cell
+ * class "cp-btn" (on every row with cellClass, or on some rows with
+ * cellClassRules); CustomerPortal's CSS draws its button. A new button needs
+ * no change to this file.
+ * areaId is CustomerGridArea.Id. When it is empty, the container with the
+ * Style Class "customer-grid-area" is used.
+ */
+window.CustomerGrid = (function () {
+    "use strict";
+
+    var SELECTION_COLUMN = "ag-Grid-SelectionColumn";   // AG Grid's checkbox column
+    var BUTTON_CLASS = "cp-btn";                        // cell class of every button column
+    var AREA_CLASS = "customer-grid-area";
+
+    // The functions given to attach(), per area element.
+    var handlersByArea = new WeakMap();
+
+    function findArea(areaId) {
+        return (areaId &amp;&amp; document.getElementById(areaId)) ||
+            document.querySelector("." + AREA_CLASS);
+    }
+
+    // AG Grid writes each row's id (from "rowIdField") in row-id, and each
+    // column's id in col-id. Returns both for a click inside a row, else null.
+    function locate(target, area) {
+        if (!target || !target.closest) return null;
+        var cell = target.closest("[col-id]");
+        var row = target.closest(".ag-row[row-id]");
+        if (!cell || !row || !area.contains(row)) return null;
+        return { rowId: row.getAttribute("row-id"), colId: cell.getAttribute("col-id"), cell: cell };
+    }
+
+    // Row ids come back as text; OutSystems ids are numbers.
+    function toId(rowId) {
+        return /^\d+$/.test(rowId) ? Number(rowId) : rowId;
+    }
+
+    // The texts of the row's cells that are on screen, by column id. A row is
+    // split into pinned and scrolling parts, so every part is read.
+    function rowCells(area, rowId) {
+        var cells = {};
+        var parts = area.querySelectorAll(".ag-row[row-id]");
+        for (var i = 0; i &lt; parts.length; i++) {
+            if (parts[i].getAttribute("row-id") !== rowId) continue;
+            var found = parts[i].querySelectorAll("[col-id]");
+            for (var j = 0; j &lt; found.length; j++) {
+                cells[found[j].getAttribute("col-id")] = found[j].textContent.trim();
+            }
+        }
+        return cells;
+    }
+
+    function handle(area, target) {
+        var hit = locate(target, area);
+        var handlers = handlersByArea.get(area);
+        if (!hit || !handlers || hit.colId === SELECTION_COLUMN) return;
+
+        var id = toId(hit.rowId);
+        var buttons = handlers.buttons || {};
+        var isButtonColumn = Object.prototype.hasOwnProperty.call(buttons, hit.colId);
+        if (hit.cell.classList.contains(BUTTON_CLASS)) {
+            if (isButtonColumn &amp;&amp; typeof buttons[hit.colId] === "function") {
+                buttons[hit.colId](id, rowCells(area, hit.rowId));
+            } else {
+                console.warn('[CustomerGrid] No handler for the button column "' + hit.colId + '". Add it under "buttons" in attach().');
+            }
+        } else if (!isButtonColumn &amp;&amp; typeof handlers.onRowClicked === "function") {
+            // A button column's cell without cp-btn (its button is hidden on this row) does nothing.
+            handlers.onRowClicked(id);
+        }
+    }
+
+    function attach(areaId, handlers) {
+        var area = findArea(areaId);
+        if (!area) {
+            console.error('[CustomerGrid] Area not found (AreaId "' + (areaId || "") + '"). ' +
+                "Set the JavaScript node's AreaId to CustomerGridArea.Id, " +
+                'or give that container the Style Class "' + AREA_CLASS + '".');
+            return false;
+        }
+        // Listen once per area; calling attach again only replaces the functions.
+        if (!handlersByArea.has(area)) {
+            area.addEventListener("click", function (event) {
+                handle(area, event.target);
+            });
+            area.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") handle(area, event.target);
+            });
+        }
+        handlersByArea.set(area, handlers || {});
+        return true;
+    }
+
+    return { attach: attach };
+})();</code></pre></figure>
+    <div class="table-wrap"><table>
+      <tr><th>New in this version</th><th>What it does</th></tr>
+      <tr><td><code>buttons</code> in <code>attach()</code></td><td>One function per button column, keyed by its <code>colId</code>. A click, or <kbd>Enter</kbd>, on such a cell calls it with the row's id and its cells.</td></tr>
+      <tr><td><code>cp-btn</code></td><td>Marks a cell as a button: on every row with <code>cellClass</code>, or only on some rows with <code>cellClassRules</code> (step 4.2). In a button column, a cell without it does nothing. A <code>cp-btn</code> cell without a function only logs a warning; it never counts as a row click.</td></tr>
+      <tr><td><code>rowCells</code></td><td>The row's visible texts by <code>colId</code>, for example <code>cells.name</code> for the dialog. Only cells on screen are included; for other data, use the id.</td></tr>
+      <tr><td>No browser <code>confirm()</code></td><td>The question is asked by CustomerPortal's own dialog (step 3.5).</td></tr>
+    </table></div>
+  </section>
+
+  <section class="step" id="s1-2">
+    <h3><span class="step-num">1.2</span><span class="step-title">Create customerportal-grid.css</span></h3>
+    <p>In the same folder. Button columns are empty in the data. This CSS gives every <code>cp-btn</code> cell the same button look, and one short rule per button sets its label. It keeps the hand cursor from document 2. You paste it into OutSystems in step 3.2.</p>
+<figure class="code"><figcaption>customerportal-grid.css</figcaption><pre><code>/* CustomerPortal's look for the shared grid, scoped to the area around it. */
+.customer-grid-area .ag-row {
+    cursor: pointer;
+}
+
+/* Button columns are empty in the data. Every cell with the class cp-btn
+   shows a button; its label comes from one rule per button below. */
+.customer-grid-area .ag-cell.cp-btn::after {
+    display: inline-block;
+    padding: 5px 10px;
+    border: 1px solid #c3cbd3;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1d4e8a;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+.customer-grid-area .ag-cell.cp-btn:hover::after {
+    background: #f3f5f7;
+}
+
+/* One rule per button: its label, and optionally its colours. */
+.customer-grid-area .ag-cell.cp-delete::after {
+    content: "Delete";
+    color: #a12f1e;
+    border-color: #e7b3aa;
+}</code></pre></figure>
+  </section>
+
+  <section class="step" id="s1-3">
+    <h3><span class="step-num">1.3</span><span class="step-title">Test it on your PC</span></h3>
+    <p>Replace <code>test.html</code> with this version. It shows the Delete buttons and a confirmation dialog like the screen's, and calls the API:</p>
+<figure class="code"><figcaption>test.html (in customerportal-scripts)</figcaption><pre><code>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;CustomerPortal delete test&lt;/title&gt;
+  &lt;link rel="stylesheet" href="customerportal-grid.css"&gt;
+  &lt;style&gt;
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    button { margin-right: 8px; padding: 6px 12px; }
+    pre { background: #f4f4f4; padding: 8px; min-height: 24px; }
+    dialog { border: 1px solid #c3cbd3; border-radius: 8px; padding: 20px 24px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;CustomerPortal Delete (local test)&lt;/h1&gt;
+  &lt;p id="core"&gt;&lt;/p&gt;
+
+  &lt;!-- Like the screen's confirmation Popup (ShowDeleteDialog) --&gt;
+  &lt;dialog id="deleteDialog"&gt;
+    &lt;h3&gt;Delete customer&lt;/h3&gt;
+    &lt;p id="deleteText"&gt;&lt;/p&gt;
+    &lt;button id="yes"&gt;Yes, delete&lt;/button&gt;
+    &lt;button id="no"&gt;No&lt;/button&gt;
+  &lt;/dialog&gt;
+
+  &lt;!-- Like the Customers screen: the container CustomerGridArea around the block --&gt;
+  &lt;div id="CustomerGridArea" class="customer-grid-area"&gt;
+    &lt;div id="GridHost"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;pre id="log"&gt;Loading customers from the REST API…&lt;/pre&gt;
+
+  &lt;!-- The shared core, unchanged --&gt;
+  &lt;script src="../aggrid-core/dist/ag-grid-core.js"&gt;&lt;/script&gt;
+  &lt;!-- CustomerPortal's own script --&gt;
+  &lt;script src="customerportal-grid.js"&gt;&lt;/script&gt;
+  &lt;script&gt;
+    var API = "https://jsonplaceholder.typicode.com/users";
+    function log(text) { document.getElementById("log").textContent = text; }
+    document.getElementById("core").textContent =
+      "AGGridCore " + AGGridCore.version + " · " + AGGridCore.edition + " (not changed)";
+
+    // ConfigJson, exactly as BuildConfig makes it (step 2.4)
+    var config = {
+      pageSize: 10,
+      rowIdField: "id",
+      exportFileName: "customers",
+      features: { sideBar: true, statusBar: true },
+      columns: [
+        { field: "id",           headerName: "ID",       width: 90, filter: "agNumberColumnFilter" },
+        { field: "name",         headerName: "Customer", flex: 1, minWidth: 180 },
+        { field: "email",        headerName: "Email",    width: 230 },
+        { field: "address.city", headerName: "City",     width: 160 },
+        { field: "company.name", headerName: "Company",  width: 200 },
+        { colId: "delete", headerName: "", width: 100, pinned: "right", cellClass: ["cp-btn", "cp-delete"],
+          sortable: false, filter: false, resizable: false, suppressMovable: true,
+          suppressHeaderMenuButton: true, suppressColumnsToolPanel: true, suppressFiltersToolPanel: true,
+          export: false }
+      ]
+    };
+    var rowsJson = "";
+    var deleteId = 0;   // like the screen variable DeleteId
+
+    // What AGGridCoreBlock does when RowsJson changes
+    function showInBlock() {
+      AGGridCore.mount("GridHost", JSON.stringify(config), rowsJson, {
+        height: 420,
+        onSelectionChanged: function (json) { log("Selected: " + json); }
+      });
+    }
+
+    // The JavaScript node RemoveRow (step 3.6)
+    function removeRow(rowsJson, customerId) {
+      var rows = JSON.parse(rowsJson || "[]");
+      return JSON.stringify(rows.filter(function (row) { return row.id !== customerId; }));
+    }
+
+    var dialog = document.getElementById("deleteDialog");
+
+    // What the Customers screen's On Ready does (step 3.7)
+    CustomerGrid.attach("CustomerGridArea", {
+      onRowClicked: function (id) {
+        console.log("A row was clicked", id);
+        log("Row clicked: customer " + id);
+      },
+      buttons: {
+        "delete": function (id, cells) {
+          // Like the client action AskDelete: remember the customer, open the dialog
+          deleteId = id;
+          document.getElementById("deleteText").textContent =
+            "Delete " + (cells.name || "this customer") + "? This cannot be undone.";
+          dialog.showModal();
+        }
+      }
+    });
+
+    // No: close the dialog, nothing changes
+    document.getElementById("no").onclick = function () {
+      dialog.close();
+      log("Not deleted.");
+    };
+
+    // Yes: like ConfirmDeleteOnClick - call the API, remove the row, close the dialog
+    document.getElementById("yes").onclick = function () {
+      fetch(API + "/" + deleteId, { method: "DELETE" })
+        .then(function (response) {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          rowsJson = removeRow(rowsJson, deleteId);
+          dialog.close();
+          showInBlock();
+          log("DELETE /users/" + deleteId + " → " + response.status + ". Customer deleted.");
+        })
+        .catch(function (error) { log("Delete failed: " + error.message); });
+    };
+
+    // Like the Data Action that calls GetUsers
+    fetch(API)
+      .then(function (response) { return response.text(); })
+      .then(function (text) {
+        rowsJson = text;
+        showInBlock();
+        log("Click a row, or Delete");
+      })
+      .catch(function (error) { log("Could not load the customers: " + error.message); });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></figure>
+    <p>Double-click <code>test.html</code>.</p>
+    <div class="callout check"><span class="label">Expected</span>
+      <ul>
+        <li>10 customers, each with a red <span class="ui">Delete</span> button on the right.</li>
+        <li><span class="ui">Delete</span> on Ervin Howell opens the dialog <em>Delete Ervin Howell? This cannot be undone.</em></li>
+        <li><span class="ui">No</span> closes it, and the row stays.</li>
+        <li><span class="ui">Yes</span> shows <em>DELETE /users/2 → 200. Customer deleted.</em>, and the row disappears.</li>
+        <li>A click elsewhere in a row still logs <em>A row was clicked</em> and doesn't open the dialog.</li>
+      </ul>
+    </div>
+  </section>
+</section>
+
+<!-- ===================================================== PART 2 -->
+<section class="part" id="part2" data-short="The API call">
+  <div class="part-head"><span class="part-label">Part 2</span><h2>The API call</h2><span class="time">≈ 10 min</span></div>
+
+  <section class="step" id="s2-1">
+    <h3><span class="step-num">2.1</span><span class="step-title">Add the DeleteUser method</span></h3>
+    <ol>
+      <li>Right-click <code>CustomersAPI</code> → <span class="path">Add REST API Method…</span></li>
+      <li>Method <code>DELETE</code>, URL:</li>
+    </ol>
+<figure class="code"><figcaption>URL</figcaption><pre><code>https://jsonplaceholder.typicode.com/users/{id}</code></pre></figure>
+    <ol start="3">
+      <li><span class="ui">Test</span> tab: enter <code>id</code> = <code>3</code> and click <span class="ui">Test</span>. The status is <code>200</code>, with an empty response <code>{}</code>. Click <span class="ui">Finish</span>.</li>
+      <li>Rename the new method to <code>DeleteUser</code>. <code>{id}</code> in the URL became its input parameter <code>id</code>. There is no body, and the response is not used.</li>
+    </ol>
+  </section>
+
+  <section class="step" id="s2-2">
+    <h3><span class="step-num">2.2</span><span class="step-title">Server action CustomerDelete</span></h3>
+    <ol>
+      <li><span class="ui">Logic</span> tab → right-click <span class="ui">Server Actions</span> → <span class="path">Add Server Action</span>. Name it <code>CustomerDelete</code>.</li>
+      <li>Add an input <code>Id</code> (Integer).</li>
+      <li>Flow: drag <code>DeleteUser</code> in, with <code>id</code> = <code>Id</code>.</li>
+    </ol>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Server action</span><span class="flow-name">CustomerDelete</span><span class="flow-sig">Input: Id (Integer)</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-rest"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor"/><path d="M10 13.5h11l-3-3M22 18.5H11l3 3" fill="none" style="stroke: var(--surface)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="fx-body"><span class="fx-name">DeleteUser</span><span class="fx-type">REST method · CustomersAPI</span><ul class="fx-values"><li><code>id = Id</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+  </section>
+</section>
+
+<!-- ===================================================== PART 3 -->
+<section class="part" id="part3" data-short="The Customers screen">
+  <div class="part-head"><span class="part-label">Part 3</span><h2>The Customers screen</h2><span class="time">≈ 20 min</span></div>
+
+  <section class="step" id="s3-1">
+    <h3><span class="step-num">3.1</span><span class="step-title">Update the script in OutSystems</span></h3>
+    <ol>
+      <li><span class="ui">Interface</span> tab → <span class="ui">Scripts</span> → double-click <code>customerportalgrid</code>.</li>
+      <li>Select all of its text, replace it with the file from step 1.1, and close the editor.</li>
+    </ol>
+    <p>The Customers screen already requires the script (document 2, step 2.1).</p>
+  </section>
+
+  <section class="step" id="s3-2">
+    <h3><span class="step-num">3.2</span><span class="step-title">Update the Style Sheet</span></h3>
+    <p>Open the <code>Customers</code> screen's <span class="ui">Style Sheet</span>. Replace the hand-cursor line from document 2 with all of <code>customerportal-grid.css</code> (step 1.2).</p>
+  </section>
+
+  <section class="step" id="s3-3">
+    <h3><span class="step-num">3.3</span><span class="step-title">Add the Delete column</span></h3>
+    <p>Open <code>CustomersOnInitialize</code> and replace the code of the <code>BuildConfig</code> node. Only the last column is new:</p>
+<figure class="code"><figcaption>CustomersOnInitialize → JavaScript node BuildConfig</figcaption><pre><code>$parameters.ConfigJson = JSON.stringify({
+    pageSize: 10,
+    rowIdField: "id",                   // the API's id: keeps the selection on refresh
+    exportFileName: "customers",
+    features: {
+        sideBar: true,
+        statusBar: true
+    },
+    columns: [
+        { field: "id",           headerName: "ID",       width: 90, filter: "agNumberColumnFilter" },
+        { field: "name",         headerName: "Customer", flex: 1, minWidth: 180 },
+        { field: "email",        headerName: "Email",    width: 230 },
+        { field: "address.city", headerName: "City",     width: 160 },
+        { field: "company.name", headerName: "Company",  width: 200 },
+        // A button column: drawn by CustomerPortal's CSS, handled by buttons["delete"], not exported
+        { colId: "delete", headerName: "", width: 100, pinned: "right", cellClass: ["cp-btn", "cp-delete"],
+          sortable: false, filter: false, resizable: false, suppressMovable: true,
+          suppressHeaderMenuButton: true, suppressColumnsToolPanel: true, suppressFiltersToolPanel: true,
+          export: false }
+    ]
+});</code></pre></figure>
+    <div class="table-wrap"><table>
+      <tr><th>Setting on the Delete column</th><th>Why</th></tr>
+      <tr><td><code>colId: "delete"</code></td><td>The column has no data field. A click on its cells calls <code>buttons["delete"]</code> (step 3.7).</td></tr>
+      <tr><td><code>cellClass: ["cp-btn", "cp-delete"]</code></td><td><code>cp-btn</code> makes the cells a button for the script and the CSS; <code>cp-delete</code> gives it the label <em>Delete</em>.</td></tr>
+      <tr><td><code>pinned: "right"</code></td><td>The button stays visible when the grid scrolls sideways.</td></tr>
+      <tr><td><code>sortable</code>, <code>filter</code>, <code>resizable</code>, <code>suppress…</code></td><td>No sorting, filter, menu or side-bar entry for a button column.</td></tr>
+      <tr><td><code>export: false</code></td><td>Keeps the column out of the CSV and Excel files. This is a setting of the core, not of AG Grid.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="step" id="s3-4">
+    <h3><span class="step-num">3.4</span><span class="step-title">Add the variables</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Local variable</th><th>Data Type</th><th>Default</th><th>Holds</th></tr>
+      <tr><td><code>DeleteId</code></td><td>Integer</td><td>—</td><td>The customer to delete</td></tr>
+      <tr><td><code>DeleteName</code></td><td>Text</td><td>—</td><td>Its name, for the question</td></tr>
+      <tr><td><code>ShowDeleteDialog</code></td><td>Boolean</td><td><code>False</code></td><td>Whether the confirmation is open</td></tr>
+    </table></div>
+  </section>
+
+  <section class="step" id="s3-5">
+    <h3><span class="step-num">3.5</span><span class="step-title">The confirmation dialog</span></h3>
+    <ol>
+      <li>Drag a <span class="ui">Popup</span> onto the screen, below the Add dialog. Set <span class="ui">Show Popup</span> = <code>ShowDeleteDialog</code>.</li>
+      <li>Inside it, add a Text <code>Delete customer</code> as the title.</li>
+      <li>Below it, add an Expression: <code>"Delete " + DeleteName + "? This cannot be undone."</code></li>
+      <li>Add two Buttons:
+        <ul>
+          <li><code>Yes, delete</code>: <span class="ui">On Click</span> → <span class="path">New Client Action</span> <code>ConfirmDeleteOnClick</code> (step 3.6).</li>
+          <li><code>No</code>: <span class="ui">On Click</span> → <span class="path">New Client Action</span> <code>CancelDeleteOnClick</code>, with an Assign: <code>ShowDeleteDialog = False</code>.</li>
+        </ul>
+      </li>
+    </ol>
+<figure class="code"><figcaption>The confirmation dialog</figcaption><pre><code>Popup  Show Popup = ShowDeleteDialog
+├── Text "Delete customer"
+├── Expression "Delete " + DeleteName + "? This cannot be undone."
+├── Button "Yes, delete"   On Click → ConfirmDeleteOnClick
+└── Button "No"            On Click → CancelDeleteOnClick</code></pre></figure>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">CancelDeleteOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>ShowDeleteDialog = False</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+  </section>
+
+  <section class="step" id="s3-6">
+    <h3><span class="step-num">3.6</span><span class="step-title">The client actions</span></h3>
+    <p><strong><code>AskDelete</code></strong> is called by the script. Right-click the <code>Customers</code> screen → <span class="path">Add Client Action</span>, name it <code>AskDelete</code>, and add two inputs <strong>in this order</strong>: <code>CustomerId</code> (Integer), then <code>CustomerName</code> (Text).</p>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">AskDelete</span><span class="flow-sig">Inputs, in this order: CustomerId (Integer), CustomerName (Text)</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>DeleteId = CustomerId</code></li><li><code>DeleteName = CustomerName</code></li><li><code>ShowDeleteDialog = True</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <p><strong><code>ConfirmDeleteOnClick</code></strong> runs when the user clicks <span class="ui">Yes, delete</span>:</p>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">ConfirmDeleteOnClick</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-server"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">CustomerDelete</span><span class="fx-type">Run Server Action</span><ul class="fx-values"><li><code>Id = DeleteId</code></li></ul></div></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">RemoveRow</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>RowsJson = RowsJson</code></li><li><code>CustomerId = DeleteId</code></li></ul><span class="fx-note">Output: NewRowsJson (Text)</span></div></li><li class="fx fx-assign"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M10.5 13h11M10.5 19h11" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Assign</span><ul class="fx-values"><li><code>RowsJson = RemoveRow.NewRowsJson</code></li><li><code>ShowDeleteDialog = False</code></li></ul></div></li><li class="fx fx-message"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 6.5h22v14.5H14.5L8.5 26v-5H5z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M10 12h12M10 16h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span><div class="fx-body"><span class="fx-name">Message</span><span class="fx-type">Message · Type: Success</span><ul class="fx-values"><li><code>"Customer deleted."</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <p><strong>JavaScript node <code>RemoveRow</code></strong>: inputs <code>RowsJson</code> (Text) = <code>RowsJson</code> and <code>CustomerId</code> (Integer) = <code>DeleteId</code>; output <code>NewRowsJson</code> (Text).</p>
+<figure class="code"><figcaption>ConfirmDeleteOnClick → JavaScript node RemoveRow</figcaption><pre><code>// Removes the deleted customer from the grid's rows.
+var rows = JSON.parse($parameters.RowsJson || "[]");
+$parameters.NewRowsJson = JSON.stringify(rows.filter(function (row) {
+    return row.id !== $parameters.CustomerId;
+}));</code></pre></figure>
+    <div class="callout"><span class="label">With an API that stores data</span><p>Replace <code>RemoveRow</code> and the <code>RowsJson</code> assignment with <span class="ui">Refresh Data</span> → <code>GetCustomersJson</code>, as in document 3, step 2.5.</p></div>
+  </section>
+
+  <section class="step" id="s3-7">
+    <h3><span class="step-num">3.7</span><span class="step-title">On Ready: connect the Delete button</span></h3>
+    <p>Open <code>CustomersOnReady</code> and replace the code of the <code>AttachCustomerGrid</code> node. Only the <code>buttons</code> part is new; <code>AreaId</code> stays <code>CustomerGridArea.Id</code>.</p>
+<figure class="code"><figcaption>CustomersOnReady → JavaScript node AttachCustomerGrid</figcaption><pre><code>// CustomerPortal's own row click and button columns. AGGridCore is not changed.
+if (!window.CustomerGrid) {
+    console.error("customerportal-grid.js is not loaded. Add it to the Customers screen's Required Scripts.");
+} else {
+    CustomerGrid.attach($parameters.AreaId, {
+        onRowClicked: function (id) {
+            console.log("A row was clicked", id);
+        },
+        buttons: {
+            // the column with colId "delete" in BuildConfig: open the confirmation dialog
+            "delete": function (id, cells) {
+                $actions.AskDelete(id, cells.name || "this customer");
+            }
+        }
+    });
+}</code></pre></figure>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">CustomersOnReady</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">AttachCustomerGrid</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>AreaId = CustomerGridArea.Id</code></li></ul><span class="fx-note">Same node as in document 2; only its code changes</span></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <div class="callout warn"><span class="label">Names and order</span><p>The key <code>"delete"</code> must be the column's <code>colId</code> (3.3). <code>$actions.AskDelete(…)</code> passes its values in the order of the action's inputs: <code>CustomerId</code>, then <code>CustomerName</code> (3.6). The name after <code>$actions.</code> must match exactly.</p></div>
+  </section>
+
+  <section class="step" id="s3-8">
+    <h3><span class="step-num">3.8</span><span class="step-title">Publish and verify</span></h3>
+<figure class="code"><figcaption>Customers screen after all four documents</figcaption><pre><code>Customers   (Required Scripts: customerportalgrid · Style Sheet: customerportal-grid.css)
+├── Local Variables:  ConfigJson, RowsJson, LastSelectionJson
+│                     NewName, NewEmail, NewCity, NewCompany, ShowAddDialog       (document 3)
+│                     DeleteId, DeleteName, ShowDeleteDialog                      ← new
+├── Data Action:      GetCustomersJson (GetUsers → RowsJson)
+├── Client Actions:   CustomersOnInitialize (BuildConfig, with the Delete column) ← changed
+│                     CustomersOnReady → JS AttachCustomerGrid (buttons)          ← changed
+│                     AddCustomerOnClick, CancelAddOnClick, SaveCustomerOnClick   (document 3)
+│                     AskDelete, ConfirmDeleteOnClick, CancelDeleteOnClick        ← new
+└── Widgets:
+    ├── Button "Add customer"
+    ├── Popup ShowAddDialog     (the Add dialog)
+    ├── Popup ShowDeleteDialog  (the confirmation)                               ← new
+    ├── Container CustomerGridArea
+    │   └── AGGridCoreBlock  (ConfigJson, RowsJson, Height 420, OnSelectionChanged)
+    └── Expression "Selected: " + LastSelectionJson
+
+Logic: CustomersAPI (GetUsers, CreateUser, DeleteUser ← new) · CustomerCreate · CustomerDelete ← new
+AGGridCore: unchanged</code></pre></figure>
+    <ol>
+      <li>TrueChange: no red errors. <span class="ui">1-Click Publish</span> → <span class="ui">Open in Browser</span>.</li>
+    </ol>
+    <div class="callout check"><span class="label">Expected</span>
+      <ul>
+        <li>Each row has a red <span class="ui">Delete</span> button on the right.</li>
+        <li><span class="ui">Delete</span> on a row opens the dialog with that customer's name. <span class="ui">No</span> closes it, and nothing changes.</li>
+        <li><span class="ui">Yes, delete</span> closes the dialog and shows <em>Customer deleted.</em> The row disappears, and the status bar counts one row less.</li>
+        <li>A customer added with document 3 can be deleted the same way.</li>
+        <li>A click elsewhere in a row still logs <em>A row was clicked</em>.</li>
+      </ul>
+    </div>
+  </section>
+</section>
+
+<!-- ===================================================== PART 4 -->
+<section class="part" id="part4" data-short="Reference">
+  <div class="part-head"><span class="part-label">Part 4</span><h2>Reference</h2></div>
+
+  <div class="card" id="s4-1">
+    <h3><span class="step-num">4.1</span><span class="step-title">CustomerGrid.attach</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Handler</th><th>Called when</th><th>Gets</th></tr>
+      <tr><td><code>onRowClicked(id)</code></td><td>A cell of a row is clicked, or <kbd>Enter</kbd> is pressed on it, except the checkbox and button cells</td><td>The row's id</td></tr>
+      <tr><td><code>buttons[colId](id, cells)</code></td><td>A cell of the button column with that <code>colId</code> is clicked, or <kbd>Enter</kbd> is pressed on it</td><td>The row's id, and its visible texts by <code>colId</code> (<code>cells.name</code>, <code>cells.email</code>…)</td></tr>
+    </table></div>
+    <p>Calling <code>attach</code> again on the same area only replaces the handlers; it never adds a second listener.</p>
+  </div>
+
+  <div class="card" id="s4-2">
+    <h3><span class="step-num">4.2</span><span class="step-title">Add another button</span></h3>
+    <p>Example: a <em>View</em> button next to Delete. It takes three additions, with no change to <code>customerportal-grid.js</code> or AGGridCore:</p>
+    <ol>
+      <li>In <code>BuildConfig</code> (3.3), add the column after the Delete column. Put a comma after the Delete column's closing <code>}</code> first.</li>
+    </ol>
+<figure class="code"><figcaption>BuildConfig: one more column</figcaption><pre><code>{ colId: "view", headerName: "", width: 90, pinned: "right", cellClass: ["cp-btn", "cp-view"],
+  sortable: false, filter: false, resizable: false, suppressMovable: true,
+  suppressHeaderMenuButton: true, suppressColumnsToolPanel: true, suppressFiltersToolPanel: true,
+  export: false }</code></pre></figure>
+    <ol start="2">
+      <li>In the <code>Customers</code> Style Sheet (3.2), add its label:</li>
+    </ol>
+<figure class="code"><figcaption>Style Sheet: one more rule</figcaption><pre><code>.customer-grid-area .ag-cell.cp-view::after {
+    content: "View";
+}</code></pre></figure>
+    <ol start="3">
+      <li>In the <code>AttachCustomerGrid</code> node (3.7), replace the <code>buttons</code> part with this, which adds <code>"view"</code>:</li>
+    </ol>
+<figure class="code"><figcaption>AttachCustomerGrid: buttons with View</figcaption><pre><code>buttons: {
+    "delete": function (id, cells) {
+        $actions.AskDelete(id, cells.name || "this customer");
+    },
+    "view": function (id, cells) {
+        console.log("View", id, cells.email);   // or $actions.OpenCustomer(id)
+    }
+}</code></pre></figure>
+    <p>Publish. Each row now shows <span class="ui">View</span> next to <span class="ui">Delete</span>. The key under <code>buttons</code> must be the column's <code>colId</code>, and the cell class must include <code>cp-btn</code>. For an OutSystems action, call it as in Delete, for example <code>$actions.OpenCustomer(id)</code>.</p>
+    <h4>A button on some rows only</h4>
+    <p>To show a button only where the data allows it, for example an <em>Edit</em> button for rows whose <code>is_editable</code> field is true, use <code>cellClassRules</code> instead of <code>cellClass</code>. The rule is text, so it fits in JSON; <code>data</code> is the row:</p>
+<figure class="code"><figcaption>BuildConfig: a button on some rows</figcaption><pre><code>{ colId: "edit", headerName: "", width: 80, pinned: "right",
+  cellClassRules: { "cp-btn": "data.is_editable", "cp-edit": "data.is_editable" },
+  sortable: false, filter: false, resizable: false, suppressMovable: true,
+  suppressHeaderMenuButton: true, suppressColumnsToolPanel: true, suppressFiltersToolPanel: true,
+  export: false }</code></pre></figure>
+    <p>Rows where the rule is false show no button, and a click there does nothing. The CSS rule for the label (<code>.cp-edit::after { content: "Edit"; }</code>) and the handler under <code>buttons</code> are added as above.</p>
+  </div>
+
+  <div class="card" id="s4-3">
+    <h3><span class="step-num">4.3</span><span class="step-title">What the script relies on</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Relies on</th><th>Comes from</th></tr>
+      <tr><td><code>row-id</code> on each row = the value of <code>rowIdField</code></td><td>The core's <code>rowIdField</code> setting and AG Grid</td></tr>
+      <tr><td><code>col-id</code> on each cell = the column's <code>colId</code> or <code>field</code></td><td>AG Grid</td></tr>
+      <tr><td>The class <code>ag-row</code>, and <code>ag-Grid-SelectionColumn</code> for the checkboxes</td><td>AG Grid</td></tr>
+      <tr><td><code>export: false</code> on a column</td><td>The core (document 1, step 7.2)</td></tr>
+      <tr><td>The cell class <code>cp-btn</code> on button columns</td><td>CustomerPortal's ConfigJson</td></tr>
+    </table></div>
+    <p>Nothing reaches into the core's code. After an AG Grid upgrade in the core, open <code>test.html</code> (1.3) with the new core file to confirm that row clicks and buttons still work.</p>
+  </div>
+</section>
+
+<footer>
+  Document 4 of 4 · AG Grid Enterprise 36.2.0 · OutSystems 11 Reactive Web · AGGridCore 1.0.0, unchanged · 29 October 2026
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var STORE_KEY = "aggrid-doc4-delete-v1";
+  var THEME_KEY = "aggrid-outsystems-guide-theme";
+
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable: progress is not remembered */ }
+  }
+
+  var state = load(STORE_KEY, { steps: {}, checks: {} });
+  state.steps = state.steps || {};
+  state.checks = state.checks || {};
+
+  /* ---------- theme ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  var themes = ["auto", "light", "dark"];
+  function applyTheme(t) {
+    if (t === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+    themeBtn.textContent = "Theme: " + t;
+  }
+  var theme = load(THEME_KEY, "auto");
+  applyTheme(themes.indexOf(theme) >= 0 ? theme : "auto");
+  themeBtn.addEventListener("click", function () {
+    var current = document.documentElement.getAttribute("data-theme") || "auto";
+    var next = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(next);
+    save(THEME_KEY, next);
+  });
+
+  /* ---------- contents ---------- */
+  var tocList = document.getElementById("tocList");
+  var links = {};
+  document.querySelectorAll("section.part").forEach(function (part) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = "#" + part.id;
+    a.className = "part-link";
+    a.innerHTML = '<span class="n"></span>';
+    a.firstChild.textContent = part.querySelector(".part-label").textContent.replace("Part ", "");
+    a.appendChild(document.createTextNode(part.getAttribute("data-short")));
+    li.appendChild(a);
+    links[part.id] = a;
+
+    var steps = part.querySelectorAll(".step, .card");
+    if (steps.length) {
+      var ol = document.createElement("ol");
+      steps.forEach(function (step) {
+        var sli = document.createElement("li");
+        var sa = document.createElement("a");
+        sa.href = "#" + step.id;
+        var n = document.createElement("span");
+        n.className = "n";
+        n.textContent = step.querySelector(".step-num").textContent;
+        sa.appendChild(n);
+        sa.appendChild(document.createTextNode(step.querySelector(".step-title").textContent));
+        sli.appendChild(sa);
+        ol.appendChild(sli);
+        links[step.id] = sa;
+      });
+      li.appendChild(ol);
+    }
+    tocList.appendChild(li);
+  });
+
+  /* ---------- step progress ---------- */
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+  function renderProgress() {
+    var done = steps.filter(function (s) { return state.steps[s.id]; }).length;
+    var pct = steps.length ? Math.round(done / steps.length * 100) : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressText").textContent = done + " of " + steps.length + " steps done";
+    document.getElementById("miniProgress").textContent = done + " / " + steps.length + " steps done";
+  }
+  steps.forEach(function (step) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "done-btn";
+    function paint() {
+      var isDone = !!state.steps[step.id];
+      step.classList.toggle("is-done", isDone);
+      btn.textContent = isDone ? "✓ Done" : "Mark done";
+      btn.setAttribute("aria-pressed", isDone ? "true" : "false");
+      if (links[step.id]) links[step.id].classList.toggle("done", isDone);
+    }
+    btn.addEventListener("click", function () {
+      state.steps[step.id] = !state.steps[step.id];
+      save(STORE_KEY, state);
+      paint();
+      renderProgress();
+    });
+    step.querySelector("h3").appendChild(btn);
+    paint();
+  });
+  renderProgress();
+
+  /* ---------- checklist ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  function renderChecks() {
+    var ok = 0;
+    boxes.forEach(function (box) {
+      box.checked = !!state.checks[box.id];
+      box.parentNode.classList.toggle("ok", box.checked);
+      if (box.checked) ok++;
+    });
+    var score = document.getElementById("checkScore");
+    if (score) score.textContent = ok + " / " + boxes.length;
+  }
+  boxes.forEach(function (box) {
+    box.addEventListener("change", function () {
+      state.checks[box.id] = box.checked;
+      save(STORE_KEY, state);
+      renderChecks();
+    });
+  });
+  renderChecks();
+
+  document.getElementById("resetProgress").addEventListener("click", function () {
+    if (!window.confirm("Clear all 'done' marks?")) return;
+    save(STORE_KEY, { steps: {}, checks: {} });
+    location.reload();
+  });
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll("figure.code").forEach(function (fig) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var text = fig.querySelector("code").textContent;
+      function done() {
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1600);
+      }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch (e) { btn.textContent = "Select & copy"; }
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+    fig.querySelector("figcaption").appendChild(btn);
+  });
+
+  /* ---------- active section in contents ---------- */
+  var tracked = document.querySelectorAll("section.part, .step, .card");
+  if ("IntersectionObserver" in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && links[e.target.id]) {
+          if (current) current.classList.remove("active");
+          current = links[e.target.id];
+          current.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-10% 0px -80% 0px" });
+    tracked.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- click a picture to see it full size ---------- */
+  var lightbox = document.getElementById("lightbox");
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.querySelectorAll("svg").forEach(function (shown) { lightbox.removeChild(shown); });
+  }
+  document.querySelectorAll("figure.zoomable").forEach(function (fig) {
+    fig.addEventListener("click", function () {
+      closeLightbox();
+      var svg = fig.querySelector("svg").cloneNode(true);
+      var box = svg.viewBox.baseVal;
+      // Screenshots at their real size; illustrations a bit larger than on the page
+      svg.style.width = (box.width > 1200 ? box.width : Math.round(box.width * 1.5)) + "px";
+      svg.querySelectorAll("marker").forEach(function (m) { m.id = m.id + "-zoom"; });
+      svg.querySelectorAll("[marker-end]").forEach(function (p) { p.setAttribute("marker-end", p.getAttribute("marker-end").replace(")", "-zoom)")); });
+      lightbox.appendChild(svg);
+      lightbox.classList.add("open");
+    });
+  });
+  lightbox.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
+
+  /* ---------- mobile contents drawer ---------- */
+  var openBtn = document.getElementById("tocOpen");
+  function setOpen(open) {
+    document.body.classList.toggle("toc-open", open);
+    openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  openBtn.addEventListener("click", function () { setOpen(!document.body.classList.contains("toc-open")); });
+  document.getElementById("scrim").addEventListener("click", function () { setOpen(false); });
+  tocList.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AG Grid Row Click</title>
+<meta name="description" content="Document 2 of 4: CustomerPortal logs a row click with its own script. AGGridCore is not changed.">
+<style>
+:root {
+  --bg: #f6f6f2;
+  --surface: #ffffff;
+  --surface-2: #efefe9;
+  --text: #1c2220;
+  --muted: #5b6560;
+  --border: #dadad2;
+  --accent: #0e6b66;
+  --accent-ink: #ffffff;
+  --accent-soft: #dff0ed;
+  --link: #0a5a86;
+  --ok: #1d7a3e;
+  --ok-soft: #e2f3e7;
+  --warn: #8a5200;
+  --warn-soft: #fcf0d9;
+  --danger: #a12f1e;
+  --danger-soft: #fbe6e2;
+  --info: #1d4e8a;
+  --info-soft: #e5edf8;
+  --code-bg: #1d2322;
+  --code-cap: #283130;
+  --code-cap-text: #b6c2bd;
+  --code-text: #e7ece9;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 6px 18px rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111413;
+    --surface: #191d1c;
+    --surface-2: #212726;
+    --text: #e5eae7;
+    --muted: #9ea9a4;
+    --border: #323a37;
+    --accent: #52c3ba;
+    --accent-ink: #0a1413;
+    --accent-soft: #163230;
+    --link: #7dc2ee;
+    --ok: #6fd18f;
+    --ok-soft: #14301e;
+    --warn: #f0b45c;
+    --warn-soft: #33270f;
+    --danger: #f28b7b;
+    --danger-soft: #3a1d19;
+    --info: #90b9ee;
+    --info-soft: #162436;
+    --code-bg: #0b0e0d;
+    --code-cap: #151a19;
+    --code-cap-text: #9fb0a9;
+    --code-text: #e2e8e4;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #191d1c;
+  --surface-2: #212726;
+  --text: #e5eae7;
+  --muted: #9ea9a4;
+  --border: #323a37;
+  --accent: #52c3ba;
+  --accent-ink: #0a1413;
+  --accent-soft: #163230;
+  --link: #7dc2ee;
+  --ok: #6fd18f;
+  --ok-soft: #14301e;
+  --warn: #f0b45c;
+  --warn-soft: #33270f;
+  --danger: #f28b7b;
+  --danger-soft: #3a1d19;
+  --info: #90b9ee;
+  --info-soft: #162436;
+  --code-bg: #0b0e0d;
+  --code-cap: #151a19;
+  --code-cap-text: #9fb0a9;
+  --code-text: #e2e8e4;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.62 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--link); }
+h1, h2, h3, h4 { line-height: 1.25; text-wrap: balance; }
+p, li { text-wrap: pretty; }
+strong { font-weight: 650; }
+
+/* ---------- layout ---------- */
+.layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100vh; }
+.toc {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  background: var(--surface); border-right: 1px solid var(--border);
+  padding: 22px 16px 40px;
+}
+main { padding: 36px 48px 96px; max-width: 940px; width: 100%; }
+@media (max-width: 1200px) { main { padding: 28px 28px 96px; } }
+.topbar { display: none; }
+
+.toc-title { font-weight: 700; font-size: 15px; margin: 0 0 2px; }
+.toc-sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+.progress { margin: 0 0 16px; }
+.progress-bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+.progress-bar span { display: block; height: 100%; width: 0; background: var(--ok); transition: width .3s; }
+.progress-text { font-size: 13px; color: var(--muted); margin-top: 6px; display: flex; justify-content: space-between; gap: 8px; }
+.linklike { background: none; border: 0; padding: 0; color: var(--link); font: inherit; cursor: pointer; text-decoration: underline; }
+.toc nav ol { list-style: none; margin: 0; padding: 0; }
+.toc nav > ol > li { margin: 2px 0 8px; }
+.toc nav a { display: flex; gap: 8px; text-decoration: none; color: var(--text); border-radius: 6px; padding: 4px 8px; font-size: 14px; line-height: 1.35; }
+.toc nav a:hover { background: var(--surface-2); }
+.toc nav a.part-link { font-weight: 650; }
+.toc nav ol ol a { color: var(--muted); font-size: 13.5px; padding-left: 14px; }
+.toc nav a .n { font-variant-numeric: tabular-nums; min-width: 2.2em; color: var(--muted); }
+.toc nav a.active { background: var(--accent-soft); color: var(--text); }
+.toc nav a.done .n::after { content: " ✓"; color: var(--ok); }
+.theme-btn {
+  margin-top: 18px; width: 100%; padding: 7px 10px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+}
+
+/* ---------- hero ---------- */
+.hero { margin-bottom: 28px; }
+.eyebrow { color: var(--accent); font-weight: 650; font-size: 14px; letter-spacing: .02em; margin: 0 0 8px; }
+.hero h1 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 12px; letter-spacing: -.01em; }
+.hero p.lead { font-size: 18px; color: var(--muted); margin: 0 0 16px; max-width: 62ch; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.meta li { font-size: 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 3px 11px; }
+
+/* ---------- parts & steps ---------- */
+.part { margin-top: 56px; scroll-margin-top: 16px; }
+.part-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 14px; }
+.part-label { font: 700 13px/1 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-ink); background: var(--accent); padding: 5px 9px; border-radius: 6px; }
+.part-head h2 { margin: 0; font-size: clamp(22px, 3vw, 28px); flex: 1 1 320px; }
+.time { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.part > p.lede { color: var(--muted); font-size: 17px; margin-top: 0; }
+
+.step, .card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; margin: 18px 0; box-shadow: var(--shadow); scroll-margin-top: 16px;
+}
+.step > h3, .card > h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin: 0 0 12px; font-size: 19px; }
+.step-num { font: 650 13px/1 ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--accent-soft); color: var(--accent); padding: 5px 9px; border-radius: 99px; }
+.step-title { flex: 1 1 220px; }
+.done-btn {
+  font: 600 13px/1 system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
+  border-radius: 99px; padding: 7px 12px; cursor: pointer; white-space: nowrap;
+}
+.done-btn:hover { border-color: var(--ok); color: var(--ok); }
+.step.is-done { border-color: color-mix(in srgb, var(--ok) 55%, var(--border)); }
+.step.is-done .step-num { background: var(--ok-soft); color: var(--ok); }
+.step.is-done .done-btn { background: var(--ok); border-color: var(--ok); color: var(--surface); }
+.step ol, .step ul, .card ol, .card ul { padding-left: 1.4em; }
+.step li, .card li { margin: 5px 0; }
+.step h4, .card h4 { margin: 20px 0 6px; font-size: 16px; }
+
+/* ---------- inline UI hints ---------- */
+.path {
+  display: inline; font-size: .9em; font-weight: 600; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 1px 7px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.ui { font-weight: 650; border-bottom: 2px solid var(--accent-soft); }
+kbd { font: 600 .82em ui-monospace, Consolas, monospace; background: var(--surface); border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: 1px 6px; }
+:not(pre) > code {
+  font: .88em ui-monospace, "Cascadia Code", Consolas, monospace; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 5px; padding: 1px 5px; overflow-wrap: break-word;
+}
+
+/* ---------- callouts ---------- */
+.callout { border-left: 4px solid var(--info); background: var(--info-soft); border-radius: 8px; padding: 12px 16px; margin: 16px 0; }
+.callout > :first-child { margin-top: 0; }
+.callout > :last-child { margin-bottom: 0; }
+.callout .label { display: block; font-size: 12.5px; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; color: var(--info); }
+.callout.tip { border-color: var(--ok); background: var(--ok-soft); }
+.callout.tip .label { color: var(--ok); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout.warn .label { color: var(--warn); }
+.callout.check { border-color: var(--accent); background: var(--accent-soft); }
+.callout.check .label { color: var(--accent); }
+.callout.stop { border-color: var(--danger); background: var(--danger-soft); }
+.callout.stop .label { color: var(--danger); }
+
+/* ---------- code ---------- */
+figure.code { margin: 14px 0; border-radius: 10px; overflow: hidden; background: var(--code-bg); border: 1px solid var(--border); }
+figure.code figcaption {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 34px;
+  font: 12.5px ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--code-cap-text); background: var(--code-cap); padding: 4px 6px 4px 14px;
+}
+figure.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; color: var(--code-text); font: 13.5px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace; tab-size: 4; }
+.copy-btn {
+  font: 600 12px/1 system-ui, sans-serif; color: var(--code-cap-text); background: transparent; border: 1px solid #3c4745;
+  border-radius: 6px; padding: 6px 10px; cursor: pointer; flex: none;
+}
+.copy-btn:hover { color: #fff; border-color: #6a7a76; }
+.copy-btn.copied { color: #7ee2a0; border-color: #3f8f5c; }
+
+/* ---------- tables ---------- */
+.table-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { background: var(--surface-2); font-weight: 650; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+
+/* ---------- diagrams ---------- */
+.diagram { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 12px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 540px; height: auto; color: var(--muted); }
+.diagram figcaption { font-size: 13.5px; color: var(--muted); margin-top: 6px; }
+.d-box { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
+.d-soft { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+.d-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.d-title { fill: var(--text); font: 650 13.5px system-ui, sans-serif; }
+.d-big { fill: var(--text); font: 700 15px system-ui, sans-serif; }
+.d-text { fill: var(--muted); font: 12px system-ui, sans-serif; }
+.d-mono { fill: var(--muted); font: 11.5px ui-monospace, Consolas, monospace; }
+.d-label { fill: var(--accent); font: 650 12px system-ui, sans-serif; }
+.d-line { stroke: currentColor; stroke-width: 1.6; fill: none; }
+.d-dash { stroke-dasharray: 5 4; }
+
+/* ---------- screenshots & Service Studio illustrations (fixed light colours, like a screenshot) ---------- */
+figure.shot { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 10px; }
+figure.shot svg { display: block; width: 100%; height: auto; border-radius: 8px; background: #ffffff; }
+figure.shot figcaption { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+figure.zoomable { cursor: zoom-in; }
+.ann rect { fill: none; stroke: #e0452b; stroke-width: 6; }
+.ann-badge circle { fill: #e0452b; stroke: #ffffff; stroke-width: 4; }
+.ann-badge text { fill: #ffffff; font: 700 32px system-ui, "Segoe UI", sans-serif; text-anchor: middle; }
+.ann-big { fill: #e0452b; font: 700 44px system-ui, "Segoe UI", sans-serif; }
+.ann-mid { fill: #3b4249; font: 32px system-ui, "Segoe UI", sans-serif; }
+.mk-bg { fill: #eef1f4; }
+.mk-panel { fill: #ffffff; stroke: #d3d9df; stroke-width: 1.2; }
+.mk-t { fill: #1f2328; font: 14px system-ui, "Segoe UI", sans-serif; }
+.mk-b { fill: #1f2328; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-m { fill: #6b7580; font: 13px system-ui, "Segoe UI", sans-serif; }
+.mk-s { fill: #6b7580; font: 12px system-ui, "Segoe UI", sans-serif; }
+.mk-blue-t { fill: #2f6fdf; }
+.mk-red-t { fill: #e0452b; font: 600 13px system-ui, "Segoe UI", sans-serif; }
+.mk-tile-on { fill: #fff4f0; stroke: #e0452b; stroke-width: 2; }
+.mk-if { fill: #f3f7fe; stroke: #3d7be0; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-tag { fill: #3d7be0; }
+.mk-tag-gray { fill: #6b7580; }
+.mk-tag-t { fill: #ffffff; font: 600 12px system-ui, "Segoe UI", sans-serif; }
+.mk-btn { fill: #2f6fdf; }
+.mk-btn-t { fill: #ffffff; font: 600 14px system-ui, "Segoe UI", sans-serif; }
+.mk-cont { fill: #f7f8fa; stroke: #8e9aa6; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.mk-red { stroke: #e0452b; stroke-width: 2.5; fill: none; }
+.mk-redbox { fill: #ffffff; stroke: #e0452b; stroke-width: 2; }
+.mk-input { fill: #ffffff; stroke: #c3cbd3; stroke-width: 1.2; }
+.mk-sel { fill: #e8f0fd; }
+.mk-num { fill: #e0452b; }
+.mk-num-t { fill: #ffffff; font: 700 13px system-ui, "Segoe UI", sans-serif; }
+ol.legend { list-style: none; padding: 0 !important; margin: 4px 0 18px; display: grid; gap: 6px; }
+ol.legend li { display: flex; gap: 10px; align-items: baseline; margin: 0 !important; }
+.badge {
+  display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%;
+  background: #e0452b; color: #ffffff; font: 700 12px/1 system-ui, sans-serif; transform: translateY(1px);
+}
+.lightbox { position: fixed; inset: 0; z-index: 50; display: none; overflow: auto; background: rgba(10,12,12,.86); padding: 48px 16px 16px; cursor: zoom-out; }
+.lightbox.open { display: block; }
+.lightbox svg { display: block; margin: 0 auto; max-width: none; height: auto; background: #ffffff; border-radius: 8px; }
+.lightbox-close { position: fixed; top: 10px; right: 16px; font: 600 14px system-ui, sans-serif; color: #ffffff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+
+/* ---------- checklist ---------- */
+.checklist { list-style: none; padding: 0 !important; margin: 0; }
+.checklist li { display: grid; grid-template-columns: 28px 1fr; gap: 4px 10px; padding: 12px 0; border-bottom: 1px solid var(--border); margin: 0 !important; }
+.checklist li:last-child { border-bottom: 0; }
+.checklist input { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--ok); }
+.checklist label { font-weight: 650; cursor: pointer; }
+.checklist .how { grid-column: 2; color: var(--muted); font-size: 14.5px; }
+.checklist li.ok label { color: var(--ok); }
+.score { font-weight: 650; }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.mini { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface-2); }
+.mini h4 { margin: 0 0 4px !important; }
+.mini p { margin: 0; font-size: 14.5px; color: var(--muted); }
+dl.glossary { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 8px 18px; margin: 0; }
+dl.glossary dt { font-weight: 650; }
+dl.glossary dd { margin: 0; color: var(--muted); }
+footer { margin-top: 64px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); padding-top: 18px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 1000px) {
+  .layout { display: block; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: 0; z-index: 10;
+    background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px;
+  }
+  .topbar button { font: 600 14px system-ui, sans-serif; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  .topbar .mini-progress { font-size: 13px; color: var(--muted); }
+  .toc { position: fixed; inset: 0 auto 0 0; width: min(330px, 88vw); z-index: 30; transform: translateX(-105%); transition: transform .25s; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+  body.toc-open .toc { transform: none; }
+  .scrim { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 20; }
+  body.toc-open .scrim { display: block; }
+  main { padding: 20px 16px 72px; }
+  .step, .card { padding: 16px; }
+  dl.glossary { grid-template-columns: 1fr; gap: 2px; }
+  dl.glossary dd { margin-bottom: 10px; }
+}
+@media print {
+  .toc, .topbar, .done-btn, .copy-btn, .scrim { display: none !important; }
+  .layout { display: block; }
+  main { max-width: none; padding: 0; }
+  .step, .card { break-inside: avoid; box-shadow: none; }
+}
+
+.series { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 22px; }
+.series-label { font-size: 12px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.series a { font-size: 13px; line-height: 1.3; padding: 4px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text); text-decoration: none; }
+.series a:hover { border-color: var(--accent); }
+.series a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+:root { --fx-green: #1f9a55; --fx-orange: #e07d10; --fx-blue: #4560e0; --fx-line: #a3adb5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+}
+:root[data-theme="dark"] { --fx-green: #46c983; --fx-orange: #f5a54a; --fx-blue: #8d9dff; --fx-line: #5e6a66; }
+.flow { margin: 16px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 14px 16px 6px; min-width: 0; }
+.flow figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 14px; }
+.flow-kind { font-size: 11.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.flow-name { font: 650 14.5px/1.3 ui-monospace, "Cascadia Code", Consolas, monospace; color: var(--text); overflow-wrap: anywhere; min-width: 0; }
+.flow-sig { flex-basis: 100%; font-size: 13px; color: var(--muted); }
+.flow-row { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.flow-row > .flow { flex: 1 1 280px; }
+.flow .fx-list { list-style: none; margin: 0; padding: 0; }
+.flow .fx { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 14px; padding-bottom: 26px; margin: 0; }
+.fx:last-child { padding-bottom: 8px; }
+.fx:not(:last-child)::before { content: ""; position: absolute; left: 16px; top: 36px; bottom: 7px; width: 2px; background: var(--fx-line); }
+.fx:not(:last-child)::after { content: ""; position: absolute; left: 11px; bottom: 1px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--fx-line); }
+.fx-ico { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.fx-svg { width: 30px; height: 30px; display: block; }
+.fx-svg-sm { width: 18px; height: 18px; display: inline-block; vertical-align: -4px; color: var(--fx-green); }
+.fx-start .fx-ico, .fx-end .fx-ico { color: var(--fx-green); }
+.fx-js .fx-ico, .fx-server .fx-ico, .fx-rest .fx-ico, .fx-trigger .fx-ico { color: var(--fx-orange); }
+.fx-assign .fx-ico, .fx-if .fx-ico, .fx-message .fx-ico, .fx-refresh .fx-ico { color: var(--fx-blue); }
+.fx-body { padding-top: 6px; min-width: 0; }
+.fx-name { font-weight: 650; margin-right: 8px; overflow-wrap: anywhere; }
+.fx-type { font-size: 12.5px; color: var(--muted); }
+.fx-note { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.flow .fx-values { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.flow .fx-values li { margin: 0; padding: 0; }
+.fx-branch-note { font-size: 12.5px; }
+.fx-branch-note::before { content: "·"; margin-right: 6px; }
+.fx-values code { white-space: normal; overflow-wrap: anywhere; }
+.fx-branch { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.fx-tag { font-size: 11.5px; font-weight: 650; padding: 1px 7px; border-radius: 99px; border: 1px solid var(--border); }
+.fx-arrow { color: var(--fx-line); }
+.fx-true { position: absolute; left: 24px; bottom: 9px; font-size: 11.5px; font-weight: 650; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <button type="button" id="tocOpen" aria-controls="toc" aria-expanded="false">☰ Contents</button>
+  <span class="mini-progress" id="miniProgress">0 steps done</span>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="lightbox" id="lightbox" role="dialog" aria-label="Enlarged picture"><button type="button" class="lightbox-close" id="lightboxClose">Close ✕</button></div>
+
+<div class="layout">
+<aside class="toc" id="toc" aria-label="Contents">
+  <p class="toc-title">AG Grid in OutSystems</p>
+  <p class="toc-sub">Document 2 · Row click</p>
+  <div class="progress">
+    <div class="progress-bar"><span id="progressFill"></span></div>
+    <div class="progress-text"><span id="progressText">0 of 0 steps done</span><button type="button" class="linklike" id="resetProgress">reset</button></div>
+  </div>
+  <nav><ol id="tocList"></ol></nav>
+  <button type="button" class="theme-btn" id="themeBtn">Theme: auto</button>
+</aside>
+
+<main>
+<nav class="series" aria-label="Documents in this series">
+  <span class="series-label">Series</span>
+  <a href="1-AGGrid-OutSystems-POC-Guide.html">1 · Setup</a>
+  <a href="2-AGGrid-OutSystems-RowClick-NoCoreChange.html" aria-current="page">2 · Row click</a>
+  <a href="3-AGGrid-OutSystems-Add-Record.html">3 · Add record</a>
+  <a href="4-AGGrid-OutSystems-Delete-Record.html">4 · Delete record</a>
+</nav>
+<header class="hero">
+  <p class="eyebrow">Document 2 of 4 · Row click · OutSystems 11 Reactive Web · AG Grid Enterprise 36.2.0</p>
+  <h1>Row click in CustomerPortal, without changing AGGridCore</h1>
+  <p class="lead">CustomerPortal from document 1 gets its own small script. A click on a customer row runs <code>onRowClicked: function (id) { console.log("A row was clicked", id); }</code>. AGGridCore is not opened, rebuilt or published.</p>
+  <ul class="meta">
+    <li>Builds on document 1</li>
+    <li>AGGridCore unchanged</li>
+    <li>Only CustomerPortal changes</li>
+    <li>≈ 30 min</li>
+  </ul>
+</header>
+
+<div class="callout check">
+  <span class="label">Status</span>
+  <ul>
+    <li><strong>Verified:</strong> CustomerPortal's script and test page were run against the document 1 core (AGGridCore 1.0.0, AG Grid Enterprise 36.2.0, no licence key) with document 1's column configuration and the live API. A click on Clementine Bauch logs <em>A row was clicked 3</em>, and the <kbd>Enter</kbd> key works too. A checkbox only ticks the row. Clicks on headers, the side bar, the status bar and the paging bar log nothing.</li>
+    <li><strong>Service Studio:</strong> the steps were not clicked through; menu names can differ slightly between versions.</li>
+  </ul>
+</div>
+
+<!-- ===================================================== PART 0 -->
+<section class="part" id="part0" data-short="How it works">
+  <div class="part-head"><span class="part-label">Part 0</span><h2>How it works</h2><span class="time">≈ 5 min</span></div>
+
+  <div class="card" id="s0-1">
+    <h3><span class="step-num">0.1</span><span class="step-title">AG Grid's gridOptions and this setup</span></h3>
+    <p>In AG Grid's documentation, a row click is a function inside the grid options:</p>
+<figure class="code"><figcaption>AG Grid documentation</figcaption><pre><code>const gridOptions = {
+    columnDefs: myColDefs,
+    pagination: true,
+    onRowClicked: event =&gt; console.log('A row was clicked'),
+    getRowHeight: (params) =&gt; 25
+}</code></pre></figure>
+    <p>In this setup, AGGridCore creates the grid options itself. Apps pass only JSON text through the block (<code>ConfigJson</code>, <code>RowsJson</code>), and JSON can hold values but not functions:</p>
+    <div class="table-wrap"><table>
+      <tr><th>In the snippet</th><th>In CustomerPortal</th></tr>
+      <tr><td><code>columnDefs</code></td><td><code>columns</code> in ConfigJson (document 1, step 4.6)</td></tr>
+      <tr><td><code>pagination: true</code></td><td>On by default (<code>features.pagination</code>)</td></tr>
+      <tr><td><code>getRowHeight: (params) =&gt; 25</code></td><td>A fixed height is a plain value: <code>gridOptions: { rowHeight: 25 }</code> in ConfigJson (tested)</td></tr>
+      <tr><td><code>onRowClicked</code></td><td>A function, so it can't travel as JSON. CustomerPortal's own script provides it (this document).</td></tr>
+    </table></div>
+    <p>The script works from outside the grid. AG Grid writes each row's id on the row in the page (<code>&lt;div class="ag-row" row-id="3"&gt;</code>), taken from <code>rowIdField: "id"</code>. A click travels up to a container around the block, where the script reads that id:</p>
+<figure class="code"><figcaption>What happens on a click</figcaption><pre><code>Click on a row
+   │
+   ▼
+AG Grid row  &lt;div class="ag-row" row-id="3"&gt;     ← drawn by AGGridCore (unchanged)
+   │  the click travels up
+   ▼
+Container CustomerGridArea                       ← CustomerPortal (step 2.2)
+   │  customerportal-grid.js reads row-id
+   ▼
+onRowClicked(3)  →  console.log("A row was clicked", 3)</code></pre></figure>
+  </div>
+
+  <div class="card" id="s0-2">
+    <h3><span class="step-num">0.2</span><span class="step-title">What changes where</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Module</th><th>Change</th></tr>
+      <tr><td><strong>AGGridCore</strong></td><td>None. Not opened, rebuilt or published.</td></tr>
+      <tr><td><strong>CustomerPortal</strong></td><td>One script file, a container around the block, and an On Ready action. Optional: one CSS line for a hand cursor.</td></tr>
+      <tr><td><strong>EmployeeDirectory</strong></td><td>None.</td></tr>
+    </table></div>
+  </div>
+
+  <div class="card" id="s0-3">
+    <h3><span class="step-num">0.3</span><span class="step-title">Before you start</span></h3>
+    <ul>
+      <li>Document 1 is complete: CustomerPortal's <code>Customers</code> screen shows the 10 customers.</li>
+      <li>Its BuildConfig contains <code>rowIdField: "id"</code> (document 1, step 4.6). This makes the logged id the customer's id.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================== PART 1 -->
+<section class="part" id="part1" data-short="CustomerPortal's script">
+  <div class="part-head"><span class="part-label">Part 1</span><h2>CustomerPortal's script</h2><span class="time">≈ 10 min</span></div>
+  <p class="lede">On your PC. The script belongs to CustomerPortal; AGGridCore never loads it.</p>
+
+  <section class="step" id="s1-1">
+    <h3><span class="step-num">1.1</span><span class="step-title">Create customerportal-grid.js</span></h3>
+    <p>Create the folder <code>C:\AGGrid\customerportal-scripts</code>, next to <code>aggrid-core</code>. In it, create <code>customerportal-grid.js</code>:</p>
+<figure class="code"><figcaption>customerportal-grid.js</figcaption><pre><code>/* customerportal-grid.js - CustomerPortal's row click around the shared AGGridCore grid.
+ *
+ * AGGridCore is used exactly as it is: this file does not call or change it.
+ * It listens to clicks (and Enter) in the area around the grid, finds the row
+ * that was clicked, and calls CustomerPortal's function with that row's id.
+ *
+ * Called from an OutSystems JavaScript node (the Customers screen's On Ready):
+ *   CustomerGrid.attach(areaId, {
+ *       onRowClicked: function (id) {}   // a click on a row, not on its checkbox
+ *   })
+ * areaId is CustomerGridArea.Id. When it is empty, the container with the
+ * Style Class "customer-grid-area" is used.
+ */
+window.CustomerGrid = (function () {
+    "use strict";
+
+    var SELECTION_COLUMN = "ag-Grid-SelectionColumn";   // AG Grid's checkbox column
+    var AREA_CLASS = "customer-grid-area";
+
+    // The functions given to attach(), per area element.
+    var handlersByArea = new WeakMap();
+
+    function findArea(areaId) {
+        return (areaId &amp;&amp; document.getElementById(areaId)) ||
+            document.querySelector("." + AREA_CLASS);
+    }
+
+    // AG Grid writes each row's id (from "rowIdField") in row-id, and each
+    // column's id in col-id. Returns both for a click inside a row, else null.
+    function locate(target, area) {
+        if (!target || !target.closest) return null;
+        var cell = target.closest("[col-id]");
+        var row = target.closest(".ag-row[row-id]");
+        if (!cell || !row || !area.contains(row)) return null;
+        return { rowId: row.getAttribute("row-id"), colId: cell.getAttribute("col-id") };
+    }
+
+    // Row ids come back as text; OutSystems ids are numbers.
+    function toId(rowId) {
+        return /^\d+$/.test(rowId) ? Number(rowId) : rowId;
+    }
+
+    function handle(area, target) {
+        var hit = locate(target, area);
+        var handlers = handlersByArea.get(area);
+        if (!hit || !handlers || hit.colId === SELECTION_COLUMN) return;
+        if (typeof handlers.onRowClicked === "function") handlers.onRowClicked(toId(hit.rowId));
+    }
+
+    function attach(areaId, handlers) {
+        var area = findArea(areaId);
+        if (!area) {
+            console.error('[CustomerGrid] Area not found (AreaId "' + (areaId || "") + '"). ' +
+                "Set the JavaScript node's AreaId to CustomerGridArea.Id, " +
+                'or give that container the Style Class "' + AREA_CLASS + '".');
+            return false;
+        }
+        // Listen once per area; calling attach again only replaces the functions.
+        if (!handlersByArea.has(area)) {
+            area.addEventListener("click", function (event) {
+                handle(area, event.target);
+            });
+            area.addEventListener("keydown", function (event) {
+                if (event.key === "Enter") handle(area, event.target);
+            });
+        }
+        handlersByArea.set(area, handlers || {});
+        return true;
+    }
+
+    return { attach: attach };
+})();</code></pre></figure>
+    <div class="table-wrap"><table>
+      <tr><th>Part</th><th>What it does</th></tr>
+      <tr><td><code>attach(areaId, handlers)</code></td><td>Adds one click listener and one Enter-key listener to the container around the block. It does not call or change AGGridCore. Calling it again only replaces the handlers.</td></tr>
+      <tr><td><code>findArea</code></td><td>Finds the container by its id. If the id is empty, it uses the container with the Style Class <code>customer-grid-area</code>.</td></tr>
+      <tr><td><code>locate</code></td><td>Reads the clicked row's id (<code>row-id</code>) and column (<code>col-id</code>). Clicks outside rows (headers, side bar, status bar, paging) are ignored.</td></tr>
+      <tr><td><code>handle</code></td><td>Ignores the checkbox column, so ticking a row only selects it. Any other cell calls <code>onRowClicked</code>.</td></tr>
+      <tr><td><code>toId</code></td><td>Turns the text <code>"3"</code> back into the number <code>3</code> for OutSystems.</td></tr>
+    </table></div>
+  </section>
+
+  <section class="step" id="s1-2">
+    <h3><span class="step-num">1.2</span><span class="step-title">Test it on your PC</span></h3>
+    <p>In the same folder, create <code>test.html</code>. It loads the core from <code>..\aggrid-core\dist\ag-grid-core.js</code> and calls it exactly as the block does, with CustomerPortal's configuration and API:</p>
+<figure class="code"><figcaption>test.html (in customerportal-scripts)</figcaption><pre><code>&lt;!doctype html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+  &lt;meta charset="utf-8"&gt;
+  &lt;title&gt;CustomerPortal row click test&lt;/title&gt;
+  &lt;style&gt;
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .customer-grid-area .ag-row { cursor: pointer; }
+    pre { background: #f4f4f4; padding: 8px; min-height: 24px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;CustomerPortal row click (local test)&lt;/h1&gt;
+  &lt;p id="core"&gt;&lt;/p&gt;
+
+  &lt;!-- Like the Customers screen: the container CustomerGridArea around the block --&gt;
+  &lt;div id="CustomerGridArea" class="customer-grid-area"&gt;
+    &lt;div id="GridHost"&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;pre id="log"&gt;Loading customers from the REST API…&lt;/pre&gt;
+
+  &lt;!-- The shared core, unchanged --&gt;
+  &lt;script src="../aggrid-core/dist/ag-grid-core.js"&gt;&lt;/script&gt;
+  &lt;!-- CustomerPortal's own script --&gt;
+  &lt;script src="customerportal-grid.js"&gt;&lt;/script&gt;
+  &lt;script&gt;
+    function log(text) { document.getElementById("log").textContent = text; }
+    document.getElementById("core").textContent =
+      "AGGridCore " + AGGridCore.version + " · " + AGGridCore.edition + " (not changed)";
+
+    // ConfigJson, exactly as CustomerPortal's BuildConfig makes it (document 1, step 4.6)
+    var config = {
+      pageSize: 10,
+      rowIdField: "id",
+      exportFileName: "customers",
+      features: { sideBar: true, statusBar: true },
+      columns: [
+        { field: "id",           headerName: "ID",       width: 90, filter: "agNumberColumnFilter" },
+        { field: "name",         headerName: "Customer", flex: 1, minWidth: 180 },
+        { field: "email",        headerName: "Email",    width: 230 },
+        { field: "address.city", headerName: "City",     width: 160 },
+        { field: "company.name", headerName: "Company",  width: 200 }
+      ]
+    };
+
+    // What the Customers screen's On Ready does (step 2.4)
+    CustomerGrid.attach("CustomerGridArea", {
+      onRowClicked: function (id) {
+        console.log("A row was clicked", id);
+        log("Row clicked: customer " + id);
+      }
+    });
+
+    // What the Data Action and AGGridCoreBlock do
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then(function (response) { return response.text(); })
+      .then(function (rowsJson) {
+        AGGridCore.mount("GridHost", JSON.stringify(config), rowsJson, {
+          height: 420,
+          onSelectionChanged: function (selectedRowsJson) { log("Selected: " + selectedRowsJson); }
+        });
+        log("Click a customer");
+      })
+      .catch(function (error) { log("Could not load the customers: " + error.message); });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre></figure>
+    <p>Double-click <code>test.html</code>. Press <kbd>F12</kbd> and open the <span class="ui">Console</span> tab.</p>
+    <div class="callout check"><span class="label">Expected</span>
+      <ul>
+        <li><em>AGGridCore 1.0.0 · enterprise (not changed)</em>, and 10 customers with the side bar and the status bar. Without a licence key: a watermark and the licence notice in the console.</li>
+        <li>Click <em>Clementine Bauch</em>: the grey box shows <em>Row clicked: customer 3</em>, and the console shows <em>A row was clicked 3</em>.</li>
+        <li>Tick a checkbox: the grey box shows <em>Selected: […]</em>, and nothing is logged.</li>
+        <li>Sorting, the side bar and the paging buttons log nothing.</li>
+      </ul>
+    </div>
+  </section>
+</section>
+
+<!-- ===================================================== PART 2 -->
+<section class="part" id="part2" data-short="CustomerPortal in Service Studio">
+  <div class="part-head"><span class="part-label">Part 2</span><h2>CustomerPortal in Service Studio</h2><span class="time">≈ 15 min</span></div>
+  <p class="lede">Open <strong>CustomerPortal</strong> only. Everything below is on the <code>Customers</code> screen.</p>
+
+  <section class="step" id="s2-1">
+    <h3><span class="step-num">2.1</span><span class="step-title">Import the script</span></h3>
+    <ol>
+      <li><span class="ui">Interface</span> tab → right-click <span class="ui">Scripts</span> → <span class="path">Import Script…</span> → choose <code>customerportal-grid.js</code>. It appears as <code>customerportalgrid</code>.</li>
+      <li>Select the <code>Customers</code> screen. Properties → <span class="ui">Required Scripts</span> → add <code>Scripts.customerportalgrid</code>.</li>
+    </ol>
+    <div class="callout"><span class="label">Later changes</span><p>To change the script later, double-click it under <span class="ui">Scripts</span>, edit it in Service Studio, and publish CustomerPortal.</p></div>
+  </section>
+
+  <section class="step" id="s2-2">
+    <h3><span class="step-num">2.2</span><span class="step-title">Put a container around the block</span></h3>
+    <div class="callout warn"><span class="label">The block on the screen</span><p>Under <span class="path">Interface › UI Flows › AGGridCore</span>, <code>AGGridCoreBlock</code> is the block's definition in the other module; its right-click menu has no Enclose option. Use the copy of the block that sits on the <code>Customers</code> screen.</p></div>
+    <ol>
+      <li>In the <span class="ui">Elements</span> tab, under <span class="ui">MainFlow</span>, double-click <code>Customers</code> itself (not one of its variables or actions). The canvas shows the Customers screen.</li>
+      <li>Open the <span class="ui">Widget Tree</span> tab, next to Elements. Select <code>AGGridCoreBlock</code> inside Customers.</li>
+      <li>Right-click it → <span class="path">Enclose in Container</span>. A new Container wraps the block and is selected.</li>
+      <li>In the container's Properties, set <span class="ui">Name</span> = <code>CustomerGridArea</code> and <span class="ui">Style Classes</span> = <code>"customer-grid-area"</code>, with the quotes.</li>
+    </ol>
+<figure class="code"><figcaption>Widget Tree after this step</figcaption><pre><code>Customers
+├── Container CustomerGridArea   (Style Classes "customer-grid-area")
+│   └── AGGridCoreBlock
+└── Expression "Selected: " + LastSelectionJson</code></pre></figure>
+    <p>No <span class="ui">Enclose in Container</span> in your version? Drag a <span class="ui">Container</span> from the toolbox onto the screen, then drag <code>AGGridCoreBlock</code> into it in the Widget Tree. The block keeps its inputs and its OnSelectionChanged handler.</p>
+  </section>
+
+  <section class="step" id="s2-3">
+    <h3><span class="step-num">2.3</span><span class="step-title">Optional: a hand cursor over the rows</span></h3>
+    <p>Select the <code>Customers</code> screen and open its <span class="ui">Style Sheet</span> (double-click the property). Add:</p>
+<figure class="code"><figcaption>Customers screen → Style Sheet</figcaption><pre><code>.customer-grid-area .ag-row { cursor: pointer; }</code></pre></figure>
+    <p>The rule applies only inside CustomerPortal's container. EmployeeDirectory and GridDemo are not affected.</p>
+  </section>
+
+  <section class="step" id="s2-4">
+    <h3><span class="step-num">2.4</span><span class="step-title">On Ready → attach onRowClicked</span></h3>
+    <ol>
+      <li>Select the <code>Customers</code> screen. Properties → <span class="ui">Events</span>: <span class="ui">Event</span> = <code>OnReady</code>, <span class="ui">Handler</span> = <span class="path">New Client Action</span>.</li>
+      <li>Drag a <span class="ui">JavaScript</span> node between Start and End and name it <code>AttachCustomerGrid</code>.</li>
+      <li>In the JavaScript editor, add an input parameter <code>AreaId</code> (Text), then paste:</li>
+    </ol>
+<figure class="code"><figcaption>CustomersOnReady → JavaScript node AttachCustomerGrid</figcaption><pre><code>// CustomerPortal's own row click. AGGridCore is not changed.
+if (!window.CustomerGrid) {
+    console.error("customerportal-grid.js is not loaded. Add it to the Customers screen's Required Scripts.");
+} else {
+    CustomerGrid.attach($parameters.AreaId, {
+        onRowClicked: function (id) {
+            console.log("A row was clicked", id);
+        }
+    });
+}</code></pre></figure>
+    <ol start="4">
+      <li>Close the editor and select the <code>AttachCustomerGrid</code> node in the flow. Its Properties now show <span class="ui">AreaId</span>.</li>
+      <li>The <span class="ui">AreaId</span> dropdown suggests only variables, so choose <span class="ui">Expression Editor…</span>. In the scope tree, expand <span class="path">Widgets › CustomerGridArea</span>, double-click <span class="ui">Id</span>, and click <span class="ui">Done</span>. The value is <code>CustomerGridArea.Id</code>. You can also type it straight into the field.</li>
+    </ol>
+<figure class="flow">
+  <figcaption><span class="flow-kind">Client action · Customers</span><span class="flow-name">CustomersOnReady</span></figcaption>
+  <ol class="fx-list"><li class="fx fx-start"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13 10 L22.5 16 L13 22 Z" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">Start</span></div></li><li class="fx fx-js"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><rect x="3.5" y="4.5" width="25" height="23" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><text x="16" y="20.5" text-anchor="middle" font-size="10.5" font-weight="700" font-family="Segoe UI, Arial, sans-serif" fill="currentColor">JS</text></svg></span><div class="fx-body"><span class="fx-name">AttachCustomerGrid</span><span class="fx-type">JavaScript</span><ul class="fx-values"><li><code>AreaId = CustomerGridArea.Id</code></li></ul></div></li><li class="fx fx-end"><span class="fx-ico"><svg class="fx-svg" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="12.5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="11" y="11" width="10" height="10" rx="2" fill="currentColor"/></svg></span><div class="fx-body"><span class="fx-name">End</span></div></li></ol>
+</figure>
+    <div class="callout warn"><span class="label">CustomerGridArea not under Widgets?</span><p>Only widgets with a <span class="ui">Name</span> are listed. Check step 2.2. If <span class="ui">AreaId</span> stays empty, the script uses the container with the Style Class <code>customer-grid-area</code> instead.</p></div>
+    <p>It doesn't matter whether the grid already has rows when On Ready runs. The listener sits on the container, so rows that appear later, after paging or sorting, are covered too.</p>
+  </section>
+
+  <section class="step" id="s2-5">
+    <h3><span class="step-num">2.5</span><span class="step-title">Publish and verify</span></h3>
+<figure class="code"><figcaption>Customers screen after this document</figcaption><pre><code>Customers   (Required Scripts: customerportalgrid   ← new, 2.1)
+├── Local Variables:  ConfigJson, RowsJson, LastSelectionJson
+├── Data Action:      GetCustomersJson (GetUsers → RowsJson)
+├── Client Actions:   CustomersOnInitialize (BuildConfig)
+│                     CustomersOnReady → JS AttachCustomerGrid           ← new, 2.4
+└── Widgets:
+    ├── Container CustomerGridArea  (Style Classes "customer-grid-area") ← new, 2.2
+    │   └── AGGridCoreBlock  (ConfigJson, RowsJson, Height 420, OnSelectionChanged)
+    └── Expression "Selected: " + LastSelectionJson</code></pre></figure>
+    <ol>
+      <li>TrueChange: no red errors. <span class="ui">1-Click Publish</span> → <span class="ui">Open in Browser</span>.</li>
+      <li>Press <kbd>F12</kbd> → <span class="ui">Console</span>. Click <em>Clementine Bauch</em>: the console shows <em>A row was clicked 3</em>.</li>
+    </ol>
+  </section>
+</section>
+
+<!-- ===================================================== PART 3 -->
+<section class="part" id="part3" data-short="Reference">
+  <div class="part-head"><span class="part-label">Part 3</span><h2>Reference</h2></div>
+
+  <div class="card" id="s3-1">
+    <h3><span class="step-num">3.1</span><span class="step-title">Do more than log</span></h3>
+    <p>Only the JavaScript node in 2.4 changes. For example, to open a customer, create a client action <code>OpenCustomer</code> with an input <code>CustomerId</code> (Integer) and call it:</p>
+<figure class="code"><figcaption>CustomersOnReady → JavaScript node AttachCustomerGrid</figcaption><pre><code>CustomerGrid.attach($parameters.AreaId, {
+    onRowClicked: function (id) {
+        console.log("A row was clicked", id);
+        $actions.OpenCustomer(id);
+    }
+});</code></pre></figure>
+    <p>The name after <code>$actions.</code> must match the client action's name exactly.</p>
+  </div>
+
+  <div class="card" id="s3-2">
+    <h3><span class="step-num">3.2</span><span class="step-title">What the script relies on</span></h3>
+    <div class="table-wrap"><table>
+      <tr><th>Relies on</th><th>Comes from</th></tr>
+      <tr><td><code>row-id</code> on each row = the value of <code>rowIdField</code></td><td>The core's <code>rowIdField</code> setting and AG Grid</td></tr>
+      <tr><td><code>col-id</code> on each cell, the class <code>ag-row</code>, and <code>ag-Grid-SelectionColumn</code> for the checkboxes</td><td>AG Grid</td></tr>
+    </table></div>
+    <p>Nothing reaches into the core's code. After an AG Grid upgrade in the core, open <code>test.html</code> (1.2) with the new core file to confirm that row clicks still work.</p>
+  </div>
+
+</section>
+
+<footer>
+  Document 2 of 4 · AG Grid Enterprise 36.2.0 · OutSystems 11 Reactive Web · AGGridCore 1.0.0, unchanged · 29 October 2026
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var STORE_KEY = "aggrid-doc2-rowclick-v1";
+  var THEME_KEY = "aggrid-outsystems-guide-theme";
+
+  function load(key, fallback) {
+    try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable: progress is not remembered */ }
+  }
+
+  var state = load(STORE_KEY, { steps: {}, checks: {} });
+  state.steps = state.steps || {};
+  state.checks = state.checks || {};
+
+  /* ---------- theme ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  var themes = ["auto", "light", "dark"];
+  function applyTheme(t) {
+    if (t === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", t);
+    themeBtn.textContent = "Theme: " + t;
+  }
+  var theme = load(THEME_KEY, "auto");
+  applyTheme(themes.indexOf(theme) >= 0 ? theme : "auto");
+  themeBtn.addEventListener("click", function () {
+    var current = document.documentElement.getAttribute("data-theme") || "auto";
+    var next = themes[(themes.indexOf(current) + 1) % themes.length];
+    applyTheme(next);
+    save(THEME_KEY, next);
+  });
+
+  /* ---------- contents ---------- */
+  var tocList = document.getElementById("tocList");
+  var links = {};
+  document.querySelectorAll("section.part").forEach(function (part) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = "#" + part.id;
+    a.className = "part-link";
+    a.innerHTML = '<span class="n"></span>';
+    a.firstChild.textContent = part.querySelector(".part-label").textContent.replace("Part ", "");
+    a.appendChild(document.createTextNode(part.getAttribute("data-short")));
+    li.appendChild(a);
+    links[part.id] = a;
+
+    var steps = part.querySelectorAll(".step, .card");
+    if (steps.length) {
+      var ol = document.createElement("ol");
+      steps.forEach(function (step) {
+        var sli = document.createElement("li");
+        var sa = document.createElement("a");
+        sa.href = "#" + step.id;
+        var n = document.createElement("span");
+        n.className = "n";
+        n.textContent = step.querySelector(".step-num").textContent;
+        sa.appendChild(n);
+        sa.appendChild(document.createTextNode(step.querySelector(".step-title").textContent));
+        sli.appendChild(sa);
+        ol.appendChild(sli);
+        links[step.id] = sa;
+      });
+      li.appendChild(ol);
+    }
+    tocList.appendChild(li);
+  });
+
+  /* ---------- step progress ---------- */
+  var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+  function renderProgress() {
+    var done = steps.filter(function (s) { return state.steps[s.id]; }).length;
+    var pct = steps.length ? Math.round(done / steps.length * 100) : 0;
+    document.getElementById("progressFill").style.width = pct + "%";
+    document.getElementById("progressText").textContent = done + " of " + steps.length + " steps done";
+    document.getElementById("miniProgress").textContent = done + " / " + steps.length + " steps done";
+  }
+  steps.forEach(function (step) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "done-btn";
+    function paint() {
+      var isDone = !!state.steps[step.id];
+      step.classList.toggle("is-done", isDone);
+      btn.textContent = isDone ? "✓ Done" : "Mark done";
+      btn.setAttribute("aria-pressed", isDone ? "true" : "false");
+      if (links[step.id]) links[step.id].classList.toggle("done", isDone);
+    }
+    btn.addEventListener("click", function () {
+      state.steps[step.id] = !state.steps[step.id];
+      save(STORE_KEY, state);
+      paint();
+      renderProgress();
+    });
+    step.querySelector("h3").appendChild(btn);
+    paint();
+  });
+  renderProgress();
+
+  /* ---------- checklist ---------- */
+  var boxes = Array.prototype.slice.call(document.querySelectorAll("#checklist input"));
+  function renderChecks() {
+    var ok = 0;
+    boxes.forEach(function (box) {
+      box.checked = !!state.checks[box.id];
+      box.parentNode.classList.toggle("ok", box.checked);
+      if (box.checked) ok++;
+    });
+    var score = document.getElementById("checkScore");
+    if (score) score.textContent = ok + " / " + boxes.length;
+  }
+  boxes.forEach(function (box) {
+    box.addEventListener("change", function () {
+      state.checks[box.id] = box.checked;
+      save(STORE_KEY, state);
+      renderChecks();
+    });
+  });
+  renderChecks();
+
+  document.getElementById("resetProgress").addEventListener("click", function () {
+    if (!window.confirm("Clear all 'done' marks?")) return;
+    save(STORE_KEY, { steps: {}, checks: {} });
+    location.reload();
+  });
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll("figure.code").forEach(function (fig) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.textContent = "Copy";
+    btn.addEventListener("click", function () {
+      var text = fig.querySelector("code").textContent;
+      function done() {
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1600);
+      }
+      function fallback() {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); done(); } catch (e) { btn.textContent = "Select & copy"; }
+        document.body.removeChild(ta);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else {
+        fallback();
+      }
+    });
+    fig.querySelector("figcaption").appendChild(btn);
+  });
+
+  /* ---------- active section in contents ---------- */
+  var tracked = document.querySelectorAll("section.part, .step, .card");
+  if ("IntersectionObserver" in window) {
+    var current = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting && links[e.target.id]) {
+          if (current) current.classList.remove("active");
+          current = links[e.target.id];
+          current.classList.add("active");
+        }
+      });
+    }, { rootMargin: "-10% 0px -80% 0px" });
+    tracked.forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- click a picture to see it full size ---------- */
+  var lightbox = document.getElementById("lightbox");
+  function closeLightbox() {
+    lightbox.classList.remove("open");
+    lightbox.querySelectorAll("svg").forEach(function (shown) { lightbox.removeChild(shown); });
+  }
+  document.querySelectorAll("figure.zoomable").forEach(function (fig) {
+    fig.addEventListener("click", function () {
+      closeLightbox();
+      var svg = fig.querySelector("svg").cloneNode(true);
+      var box = svg.viewBox.baseVal;
+      // Screenshots at their real size; illustrations a bit larger than on the page
+      svg.style.width = (box.width > 1200 ? box.width : Math.round(box.width * 1.5)) + "px";
+      svg.querySelectorAll("marker").forEach(function (m) { m.id = m.id + "-zoom"; });
+      svg.querySelectorAll("[marker-end]").forEach(function (p) { p.setAttribute("marker-end", p.getAttribute("marker-end").replace(")", "-zoom)")); });
+      lightbox.appendChild(svg);
+      lightbox.classList.add("open");
+    });
+  });
+  lightbox.addEventListener("click", closeLightbox);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
+
+  /* ---------- mobile contents drawer ---------- */
+  var openBtn = document.getElementById("tocOpen");
+  function setOpen(open) {
+    document.body.classList.toggle("toc-open", open);
+    openBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  openBtn.addEventListener("click", function () { setOpen(!document.body.classList.contains("toc-open")); });
+  document.getElementById("scrim").addEventListener("click", function () { setOpen(false); });
+  tocList.addEventListener("click", function (e) { if (e.target.closest("a")) setOpen(false); });
+})();
+</script>
+</body>
+</html>
