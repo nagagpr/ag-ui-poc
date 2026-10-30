@@ -49,3 +49,8 @@
         margin-bottom: 8px;
     }
 }
+
+/* Space between the buttons and the grid */
+.customer-grid-area .btn {
+    margin-bottom: 8px;
+}
