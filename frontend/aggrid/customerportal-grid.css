@@ -54,3 +54,37 @@
 .customer-grid-area .btn {
     margin-bottom: 8px;
 }
+
+
+/* CustomerPortal's dialogs: title, message, and buttons on the right */
+.cp-dialog {
+    width: 420px;
+    max-width: calc(100vw - 96px);   /* phones: leaves room for the popup's own padding */
+}
+.cp-dialog-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.cp-dialog-text {
+    color: #5b6670;
+    line-height: 1.5;
+    margin-bottom: 24px;
+}
+.cp-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.cp-dialog-actions .btn {
+    margin: 0;
+    min-width: 96px;
+}
+
+/* The button that deletes: filled red */
+.cp-dialog-actions .btn.cp-danger,
+.cp-dialog-actions .btn.cp-danger:hover {
+    background-color: #c62828;
+    border-color: #c62828;
+    color: #ffffff;
+}
