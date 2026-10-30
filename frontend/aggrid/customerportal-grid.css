@@ -1,0 +1,32 @@
+/* CustomerPortal's look for the shared grid. Paste into the Customers screen's
+   Style Sheet. Everything is scoped to the area around the grid. */
+.customer-grid-area .ag-row {
+    cursor: pointer;
+}
+
+/* The "edit" and "delete" columns are empty; these rules draw their buttons. */
+.customer-grid-area .ag-cell.cp-edit::after,
+.customer-grid-area .ag-cell.cp-delete::after {
+    display: inline-block;
+    padding: 5px 10px;
+    border: 1px solid #c3cbd3;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    vertical-align: middle;
+}
+.customer-grid-area .ag-cell.cp-edit::after {
+    content: "Edit";
+    color: #1d4e8a;
+}
+.customer-grid-area .ag-cell.cp-delete::after {
+    content: "Delete";
+    color: #a12f1e;
+    border-color: #e7b3aa;
+}
+.customer-grid-area .ag-cell.cp-edit:hover::after,
+.customer-grid-area .ag-cell.cp-delete:hover::after {
+    background: #f3f5f7;
+}
