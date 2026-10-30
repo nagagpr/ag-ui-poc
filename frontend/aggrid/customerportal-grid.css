@@ -30,3 +30,22 @@
 .customer-grid-area .ag-cell.cp-delete:hover::after {
     background: #f3f5f7;
 }
+
+/* Add Customer: on the right, on the line of the Export buttons */
+.customer-grid-area {
+    position: relative;
+}
+.customer-grid-area > .cp-add-button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+}
+
+/* Phones: back above the grid, so the buttons never overlap */
+@media (max-width: 600px) {
+    .customer-grid-area > .cp-add-button {
+        position: static;
+        margin-bottom: 8px;
+    }
+}
