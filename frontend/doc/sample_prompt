@@ -271,3 +271,34 @@ and the alert count before vs. after the next CodeQL run.
 
 Read this Lambda's code (main.py, its routing/handler setup, and the auth/Okta and request-validation logic) and generate a complete JSON test event I can paste into the AWS Lambda console Test tab to call POST /v1/statements through the alias, using the exact event format the handler expects, with a "<token>" placeholder for the Bearer token, source_institution_id "B1SW", account_number "", and the new API-412 parameter with a valid sample value.
 Also give me two more versions of the same event, one without the new parameter and one with an invalid value, and tell me the expected statusCode for each, the exact resource/path value the router needs, and any other headers, context fields or environment settings the code requires for the request to pass.
+
+
+{
+  "resource": "/v1/statements",
+  "path": "/v1/statements",
+  "httpMethod": "POST",
+  "headers": {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer <token>"
+  },
+  "multiValueHeaders": {
+    "Content-Type": ["application/json"],
+    "Authorization": ["Bearer <token>"]
+  },
+  "queryStringParameters": null,
+  "multiValueQueryStringParameters": null,
+  "pathParameters": null,
+  "stageVariables": null,
+  "requestContext": {
+    "resourcePath": "/v1/statements",
+    "httpMethod": "POST",
+    "path": "/dev/v1/statements",
+    "stage": "dev",
+    "requestId": "api-412-test",
+    "accountId": "440744236814",
+    "apiId": "test",
+    "identity": { "sourceIp": "127.0.0.1", "userAgent": "lambda-console-test" }
+  },
+  "body": "{\"source_institution_id\":\"B1SW\",\"account_number\":\"5151361020\",\"<new_param>\":\"<value>\"}",
+  "isBase64Encoded": false
+}
