@@ -302,3 +302,57 @@ Also give me two more versions of the same event, one without the new parameter 
   "body": "{\"source_institution_id\":\"B1SW\",\"account_number\":\"5151361020\",\"<new_param>\":\"<value>\"}",
   "isBase64Encoded": false
 }
+
+
+----------------------------------------------------------------
+Project: AWS Lambda use1-dev-eas-api-services (Python, main.py, resources/application*.yaml), behind API Gateway. Endpoint: POST /v1/statements.
+
+PROBLEM
+Both dev requests use the same customer_account_number (ending 7908) and both return HTTP 200, but only BMNB finds a statement:
+
+1. rnt_client_id = "BMNB"
+   Result: total_accounts 1, total_statements 1, program DDM, statement_id BMNB_4f73f38cc4e7_20251231_DDM_Monthly, took 6.45 s
+2. rnt_client_id = "B1FW"
+   Result: total_accounts 0, total_statements 0, accounts [], took 1.66 s
+
+I copied the BMNB S3 folder to B1FW and expected the same result. source_institution_name is blank in both responses.
+
+PART 1: FIND THE ROOT CAUSE
+Trace POST /v1/statements from the handler to the response, with file and line numbers. Cover:
+- How rnt_client_id and customer_account_number are read, validated and mapped, including whether older names (source_institution_id, account_number) are still used downstream.
+- How the S3 bucket, prefix and key are built, and the resulting path for each request.
+- Every non-S3 source that can affect the result: the "Institutions And Client Program" file in resources, cpp_sample.json, access_rules in application.yaml, environment config, database or index tables, and caches.
+- Every filter that can drop a file or account: client ID in a file name or inside file content, how the 4f73f38cc4e7 part of statement_id is calculated, program, statement type and dates.
+- Any try/except or empty-result path that could hide an S3 AccessDenied, KMS decrypt error or parse failure and still return 200.
+
+Then tell me:
+- The exact differences in how BMNB and B1FW are processed.
+- The most likely reason B1FW returns empty, with evidence from the code. Label anything the code can't confirm as unconfirmed.
+- Whether copying the folder is enough, or what else must change (file names, file content, mapping, database records).
+- Read-only AWS CLI commands I can run to confirm it, using placeholders for values you don't know.
+
+PART 2: ADD TRACE LOGS
+Use the project's existing logger. Write one structured JSON log line per step, each with step, trace_id (Lambda aws_request_id) and rnt_client_id:
+- request_received: masked request payload, function_version, invoked_function_arn
+- mapping_resolved: the institution, program, bucket and any other values resolved for the client
+- s3_lookup: bucket, exact prefix or key searched, number of objects found, first 20 keys
+- filter_result: for each filter, count before, count after, and why items were dropped
+- error: exception type, message and the S3 path involved, including exceptions that are currently caught
+- response_summary: HTTP status, total_accounts, total_statements, statement_ids, elapsed_ms
+
+LOGGING RULES
+- Never log Authorization headers, tokens, cookies or secrets.
+- Show only the last 4 digits of customer_account_number everywhere, including inside S3 paths and keys.
+- Do not log customer names, statement content or the full response body.
+
+CONSTRAINTS
+- Logging only: do not change business logic or the API request or response.
+- Do not implement a fix until I approve it.
+- Do not deploy or run anything that writes to AWS.
+- Run the existing tests if there are any.
+
+DELIVER
+1. Root cause findings.
+2. The code diff for the logs.
+3. A CloudWatch Logs Insights query that shows all steps for one trace_id in order (the log group is probably /aws/lambda/use1-dev-eas-api-services).
+4. Which log step should show where BMNB and B1FW first differ.
